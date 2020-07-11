@@ -1,4 +1,4 @@
-# QuickerChromeExtension
+# QuickerChromeConnector
 Chrome extension for Quicker  Quicker的浏览器扩展
 
 
