@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <style>
+        body {
+            padding: 10px;
+            min-width: 300px;
+            font-size: 14px;
+        }
+
+        span.success {
+            color: green;
+        }
+
+        span.warning {
+            color: red;
+        }
+
+        #pnlPermissions{
+            padding-left: 10px;
+        }
+
+        #pnlPermissions button {
+            display: block;
+            margin: 3px;
+            padding: 2px 3px;
+            text-align: left;
+        }
+
+        span.mark {
+            width: 30px;
+            text-align: center;
+            display: inline-block;
+        }
+
+        .btn-area{
+            text-align: center;
+            padding-left: 10px;
+        }
+
+        .btn-area button{
+            margin: 5px 3px 5px 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h3 style="margin-top: 0;">Quicker连接器</h2>
+    <div>
+        浏览器标识：<span id="browser" style='font-weight: bold;'></span>
+    </div>
+    <div>
+        消息代理：<span id="connectionState" style='font-weight: bold;'></span>
+    </div>    
+    <h4 style="margin: 10px 0 5px 0;">可选权限：<small style='font-weight: normal;color:#A0A0A0;'>请点击按钮允许或禁止权限。</small></h4>
+    <div class='btn-area'>
+        <button id='btn-allow-all'><span  style="color:green">✔</span> 允许全部</button>
+        <button id='btn-remove-all'><span title="已禁止" style="color:red;">🛇</span> 禁用全部</button>
+    </div>
+    <div id='pnlPermissions' style="display: flex; flex-direction:column;">
+    </div>
+    
+    <p>
+        使用文档：<a href='https://getquicker.net/r?id=12' target="_blank">https://getquicker.net/r?id=12</a> 
+    </p>
+    <script src="popup.js"></script>
+</body>
+
+</html>
