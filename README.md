@@ -4,7 +4,8 @@ Chrome extension for Quicker  Quicker的浏览器扩展
 
 # 文件
 - src:  扩展源代码
-- dist: 用于发布或下载的zip文件
+- dist: 用于发布或下载的zip文件。
+(含有local的包含key信息，用于在本地调试模式下使用。含有publish的去除了key信息，用于发布到商店)
 - create_zip.ps1   用于生成zip文件
 
 # 扩展网址
