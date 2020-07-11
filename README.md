@@ -13,3 +13,10 @@ Chrome extension for Quicker  Quicker的浏览器扩展
 # 参考
 - [扩展开发官方文档](https://developer.chrome.com/extensions)
 
+# Change Logs
+## 0.3.0
+- 运行后台脚本支持从脚本中返回数据: `sendReplyToQuicker(isSuccess, message, data, qk_msg_serial)`. 如果脚本中不含有sendReplyToQuicker，则自动返回。
+- Popup中增加附加权限管理。
+- 显示当前浏览器标识。
+
+
