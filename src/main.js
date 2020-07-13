@@ -290,16 +290,17 @@ function openUrl(msg) {
 
 
 	//
-	// 创建标签
-	var createProperties = {
-		url: url
-	};
+	// 创建标签. 使用“窗口信息” 为tabs.create指定额外参数（如是否活动）
+	var createProperties = Object.assign({}, msg.data.windowInfo, { url: url });
+
+	//  父窗口id
 	if (!msg.data.windowId) {
 		if (msg.data.windowId !== "Current" && msg.data.windowId !== "") {
 			createProperties.windowId = parseInt(msg.data.windowId); // 窗口ID
 		}
 	}
 
+	// 创建标签页
 	chrome.tabs.create(
 		createProperties,
 		function (tab) {
