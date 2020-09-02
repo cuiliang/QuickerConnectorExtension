@@ -17,7 +17,7 @@ get-content ".\src\manifest.json" | select-string -pattern 'key' -notmatch | Out
 Compress-Archive -Path ".\temp\*" -DestinationPath ".\dist\QuickerConnector_publish_$ver.zip" -Force
 
 #remove permissions firefox not support
-get-content ".\src\manifest.json" | select-string -pattern 'key' -notmatch | select-string -pattern 'debugger' -notmatch | Out-File -FilePath .\temp\manifest.json -Encoding utf8
+get-content ".\src\manifest.json" | select-string -pattern 'key' -notmatch | select-string -pattern 'debugger' -notmatch | select-string -pattern 'pageCapture' -notmatch | Out-File -FilePath .\temp\manifest.json -Encoding utf8
 Compress-Archive -Path ".\temp\*" -DestinationPath ".\dist\QuickerConnector_firefox_$ver.zip" -Force
 
 # create file for local use
