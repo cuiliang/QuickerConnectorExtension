@@ -14,9 +14,14 @@ Copy-Item ".\src" -Destination ".\temp"  -Recurse
 get-content ".\src\manifest.json" | select-string -pattern 'key' -notmatch | Out-File -FilePath .\temp\manifest.json -Encoding utf8
 
 # create file for publish to web store
-Compress-Archive -Path ".\temp\*" -DestinationPath ".\dist\QuickerChromeConnector_publish_$ver.zip" -Force
+Compress-Archive -Path ".\temp\*" -DestinationPath ".\dist\QuickerConnector_publish_$ver.zip" -Force
+
+#remove permissions firefox not support
+get-content ".\src\manifest.json" | select-string -pattern 'key' -notmatch | select-string -pattern 'debugger' -notmatch | Out-File -FilePath .\temp\manifest.json -Encoding utf8
+Compress-Archive -Path ".\temp\*" -DestinationPath ".\dist\QuickerConnector_firefox_$ver.zip" -Force
+
 # create file for local use
-Compress-Archive -Path ".\src\*" -DestinationPath ".\dist\QuickerChromeConnector_Local_$ver.zip" -Force
+Compress-Archive -Path ".\src\*" -DestinationPath ".\dist\QuickerConnector_Local_$ver.zip" -Force
 
 # delete temp folder
 Remove-Item ".\temp" -Recurse

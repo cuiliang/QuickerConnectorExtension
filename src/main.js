@@ -6,6 +6,10 @@
 
 const host = "com.getquicker.chromeagent";
 console.log("Quicker Chrome Connector starting...");
+
+// to support firefox
+chrome = chrome || browser;
+
 var manifest = chrome.runtime.getManifest();
 
 // 与浏览器的连接端口
@@ -560,7 +564,7 @@ function getBrowserName() {
 	var isOpera = (!!window.opr && !!opr.addons) || !!window.opera || navigator.userAgent.indexOf(' OPR/') >= 0;
 
 	// Firefox 1.0+
-	var isFirefox = typeof InstallTrigger !== 'undefined';
+	var isFirefox = navigator.userAgent.indexOf("Firefox") > -1;// typeof InstallTrigger !== 'undefined';
 
 	// Safari 3.0+ "[object HTMLElementConstructor]" 
 	var isSafari = /constructor/i.test(window.HTMLElement) || (function (p) { return p.toString() === "[object SafariRemoteNotification]"; })(!window['safari'] || (typeof safari !== 'undefined' && safari.pushNotification));
@@ -583,6 +587,9 @@ function getBrowserName() {
 	// if (isBlink){
 	// 	return "blink";
 	// }
+	if (isFirefox) {
+		return "firefox";
+	}
 	if (isEdgeChromium) {
 		return "msedge";
 	}
@@ -595,9 +602,7 @@ function getBrowserName() {
 	if (isIE) {
 		return "ie";
 	}
-	if (isFirefox) {
-		return "firefox";
-	}
+	
 	if (isOpera) {
 		return "opera";
 	}
