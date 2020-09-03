@@ -11,8 +11,10 @@ Browser extension for Quicker  Quicker的浏览器扩展
 # 扩展网址
 ## Chrome
 - https://chrome.google.com/webstore/detail/quicker-chrome-connector/klggbkjfmbonefdcfkiidhcmfjdfnepa?hl=zh-CN
+
 ## Edge
-- 待审核
+- https://microsoftedge.microsoft.com/addons/detail/quicker-connector/hcnknmobjnlekfkbcllhcoldbppkgpda
+
 ## Firefox
 - 待审核
 
