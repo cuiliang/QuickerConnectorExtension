@@ -14,14 +14,16 @@ Copy-Item ".\src" -Destination ".\temp"  -Recurse
 get-content ".\src\manifest.json" | select-string -pattern 'key' -notmatch | Out-File -FilePath .\temp\manifest.json -Encoding utf8
 
 # create file for publish to web store
+Remove-Item ".\temp\manifest-firefox.json"
 Compress-Archive -Path ".\temp\*" -DestinationPath ".\dist\QuickerConnector_publish_$ver.zip" -Force
 
 #remove permissions firefox not support
-get-content ".\src\manifest.json" | select-string -pattern 'key' -notmatch | select-string -pattern 'debugger' -notmatch | select-string -pattern 'pageCapture' -notmatch | Out-File -FilePath .\temp\manifest.json -Encoding utf8
+#get-content ".\src\manifest.json" | select-string -pattern 'key' -notmatch | select-string -pattern 'debugger' -notmatch | select-string -pattern 'pageCapture' -notmatch | Out-File -FilePath .\temp\manifest.json -Encoding utf8
+Copy-Item ".\src\manifest-firefox.json" ".\temp\manifest.json"
 Compress-Archive -Path ".\temp\*" -DestinationPath ".\dist\QuickerConnector_firefox_$ver.zip" -Force
 
 # create file for local use
-Compress-Archive -Path ".\src\*" -DestinationPath ".\dist\QuickerConnector_Local_$ver.zip" -Force
+# Compress-Archive -Path ".\src\*" -DestinationPath ".\dist\QuickerConnector_Local_$ver.zip" -Force
 
 # delete temp folder
 Remove-Item ".\temp" -Recurse

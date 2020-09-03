@@ -1,0 +1,52 @@
+{
+  "name": "Quicker Connector",
+  "version": "0.4.0",
+  "manifest_version": 2,
+  "description": "Native message connector with Quicker application",
+  "background": {
+    "scripts": [
+      "main.js"
+    ],
+    "persistent": false
+  },
+  "applications": {
+    "gecko": {
+      "id": "addon@getquicker.net"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "jquery-3.5.1.min.js",
+        "content.js"
+      ],
+      "all_frames": true
+    }
+  ],
+  "icons": {
+    "128": "icon-128.png"
+  },
+  "browser_action": {
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "nativeMessaging",
+    "tabs",
+    "<all_urls>"
+  ],
+  "optional_permissions":[
+    "bookmarks",
+    "browsingData",
+    "topSites",    
+    "downloads",
+    "history",
+    "cookies",
+    "sessions",
+    "management"
+  ],
+  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
+  "homepage_url": "https://getquicker.net"
+}
