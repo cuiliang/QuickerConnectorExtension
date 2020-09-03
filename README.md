@@ -1,5 +1,5 @@
-# QuickerChromeConnector
-Chrome extension for Quicker  Quicker的浏览器扩展
+# Quicker Connector Extension
+Browser extension for Quicker  Quicker的浏览器扩展
 
 
 # 文件
@@ -9,7 +9,12 @@ Chrome extension for Quicker  Quicker的浏览器扩展
 - create_zip.ps1   用于生成zip文件
 
 # 扩展网址
+## Chrome
 - https://chrome.google.com/webstore/detail/quicker-chrome-connector/klggbkjfmbonefdcfkiidhcmfjdfnepa?hl=zh-CN
+## Edge
+- 待审核
+## Firefox
+- 待审核
 
 # 参考
 - [扩展开发官方文档](https://developer.chrome.com/extensions)
@@ -17,10 +22,8 @@ Chrome extension for Quicker  Quicker的浏览器扩展
 # Change Logs
 
 ## 0.4.0
-- 扩展名改为Quicker Connector
-
-## 0.3.1
-- 创建标签页的时候支持传递参数（使用窗口信息参数）
+- 重命名，去除Chrome字样，以避免Ms不给审核通过Edge插件。
+- 支持Firefox
 
 ## 0.3.0
 - 运行后台脚本支持从脚本中返回数据: `sendReplyToQuicker(isSuccess, message, data, qk_msg_serial)`. 如果脚本中不含有sendReplyToQuicker，则自动返回。
