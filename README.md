@@ -16,7 +16,7 @@ Browser extension for Quicker  Quicker的浏览器扩展
 - https://microsoftedge.microsoft.com/addons/detail/quicker-connector/hcnknmobjnlekfkbcllhcoldbppkgpda
 
 ## Firefox
-- 待审核
+- https://addons.mozilla.org/zh-CN/firefox/addon/quicker-connector/
 
 # 参考
 - [扩展开发官方文档](https://developer.chrome.com/extensions)
