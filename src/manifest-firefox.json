@@ -6,8 +6,7 @@
   "background": {
     "scripts": [
       "main.js"
-    ],
-    "persistent": false
+    ]
   },
   "applications": {
     "gecko": {
