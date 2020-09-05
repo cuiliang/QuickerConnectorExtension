@@ -17,8 +17,9 @@ get-content ".\src\manifest.json" | select-string -pattern 'key' -notmatch | Out
 Remove-Item ".\temp\manifest-firefox.json"
 Compress-Archive -Path ".\temp\*" -DestinationPath ".\dist\QuickerConnector_publish_$ver.zip" -Force
 
-#remove permissions firefox not support
-#get-content ".\src\manifest.json" | select-string -pattern 'key' -notmatch | select-string -pattern 'debugger' -notmatch | select-string -pattern 'pageCapture' -notmatch | Out-File -FilePath .\temp\manifest.json -Encoding utf8
+#firefox version
+$manifesetFirefox = (Get-Content ".\src\manifest-firefox.json") | ConvertFrom-Json 
+$ver = $manifesetFirefox.version
 Copy-Item ".\src\manifest-firefox.json" ".\temp\manifest.json"
 Compress-Archive -Path ".\temp\*" -DestinationPath ".\dist\QuickerConnector_firefox_$ver.zip" -Force
 
