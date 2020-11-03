@@ -298,7 +298,7 @@ function openUrl(msg) {
 	var createProperties = Object.assign({}, msg.data.windowInfo, { url: url });
 
 	//  父窗口id
-	if (!msg.data.windowId) {
+	if (msg.data.windowId) {
 		if (msg.data.windowId !== "Current" && msg.data.windowId !== "") {
 			createProperties.windowId = parseInt(msg.data.windowId); // 窗口ID
 		}
