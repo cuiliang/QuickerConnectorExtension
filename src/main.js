@@ -239,6 +239,64 @@ function processQuickerCmd(msg) {
 			case "BackgroundScript":
 				runBackgroundScript(msg);
 				break;
+
+			// since 0.5.0
+			// cookies
+			case "GetCookiesByUrl":
+				getCookies(msg);
+				break;
+			case "RemoveCookiesByUrl":
+				removeCookiesByUrl(msg);
+				break;
+			// bookmarks
+			case "CreateBookmark":
+				createBookmark(msg);
+				break;
+			case "GetBookmarks":
+				getBookmarks(msg);
+				break;
+			case "SearchBookmarks":
+				searchBookmarks(msg);
+				break;
+			// browsingData
+			case "RemoveBrowsingData":
+				removeBrowsingData(msg);
+				break;
+			// topSites
+			case "GetTopSites":
+				getTopSites(msg);
+				break;
+			// downloads
+			case "DownloadFile":
+				downloadFile(msg);
+				break;
+			// history
+			case "DeleteAllHistory":
+				deleteAllHistory(msg);
+				break;
+			// 
+			case "SaveAsMHTML":
+				saveAsMHTML(msg);
+				break;
+
+			// sessions
+			case "GetRecentlyClosed":
+				getRecentlyClosed(msg);
+				break;
+			case "RestoreRecentClosedSession":
+				restoreRecentClosedSession(msg);
+				break;
+			// management
+			case "ManagementGetAll":
+				managementGetAll(msg);
+				break;
+			// send
+			case "SendDebuggerCommand":
+				sendDebuggerCommand(msg);
+				break;
+			case "CaptureFullPage":
+				captureFullPage(msg);
+				break;
 			default:
 				console.error("Unknown command:" + msg.cmd);
 				sendReplyToQuicker(false, "Unknown command:" + msg.cmd, {}, msg.serial);
@@ -258,19 +316,19 @@ function processQuickerCmd(msg) {
  *  打开网址
  * @param {data:{url,waitLoad}} msg 
  * 
-            //命令消息
-            var msg = new ChromeCommandMessage()
-            {
-                Cmd = "OpenUrl",
-                WaitComplete = waitLoad,
-                TimeoutMs = (int)timeoutMs,
-                Data = new
-                {
+			//命令消息
+			var msg = new ChromeCommandMessage()
+			{
+				Cmd = "OpenUrl",
+				WaitComplete = waitLoad,
+				TimeoutMs = (int)timeoutMs,
+				Data = new
+				{
 					Url = url,
-                    WindowId = window,
-                    WindowInfo = jWindowInfo
-                }
-            };
+					WindowId = window,
+					WindowInfo = jWindowInfo
+				}
+			};
  */
 function openUrl(msg) {
 
@@ -381,7 +439,7 @@ function closeTab(msg) {
 function runBackgroundScript(msg) {
 	// 脚本内容
 	var script = msg.data.script;
-	
+
 	// 将消息序号写入全局变量
 	window.qk_msg_serial = msg.serial;
 
@@ -392,13 +450,13 @@ function runBackgroundScript(msg) {
 		eval.call(window, script);
 
 		// 后台脚本中如果不含有返回结果的代码，则直接返回。否则由后台脚本返回结果。
-		if (!script.includes("sendReplyToQuicker(")){
+		if (!script.includes("sendReplyToQuicker(")) {
 			// 读取后台脚本为qk_bgmsg_result的复制
 			var result = window.qk_bgmsg_result || {};
 
 			sendReplyToQuicker(true, "ok", result, msg.serial);
 		}
-		
+
 	} catch (e) {
 		console.error('后台脚本错误：', e);
 		sendReplyToQuicker(false, e.message, e, msg.serial);
@@ -446,6 +504,351 @@ function _runScriptOnTab(tabId, script, msg) {
 			sendReplyToQuicker(true, "", result, msg.serial);
 		})
 }
+
+/**
+ * 在指定标签页上执行代码
+ * @param {*} msg 
+ * @param {*} func 参数：tabId, msg
+ */
+function executeOnTab(msg, func) {
+	var tabId = msg.tabId;
+
+
+	if (!tabId) {
+		chrome.tabs.query({ lastFocusedWindow: true, active: true }, function (tabs) {
+			if (tabs.length < 1) {
+				sendReplyToQuicker(false, "Can not find active tab.", {}, msg.serial);
+				return;
+			}
+
+			if (IsChromeTabUrl(tabs[0].url)) {
+				sendReplyToQuicker(false, "Can not run on this page.", {}, msg.serial)
+			} else {
+				func(tabs[0].id, msg);
+			}
+
+		});
+	} else {
+		func(tabId, msg);
+	}
+}
+
+
+////#region 其他API：0.5.0 解决提交问题
+
+/**
+ * 获取某个URL的cookie
+ * @param { data: {url: string}} msg 
+ */
+function getCookies(msg) {
+	chrome.cookies.getAll(msg.data, function (cookies) {
+		sendReplyToQuicker(true, "", cookies, msg.serial);
+	})
+}
+
+/**
+ * 清除某个URL的所有cookie
+ * @param {data:{url: string}} msg 
+ */
+function removeCookiesByUrl(msg) {
+	chrome.cookies.getAll(msg.data, function (cookies) {
+		cookies.forEach(cookie => {
+			chrome.cookies.remove({ url: msg.data.url, name: cookie.name })
+		})
+
+		sendReplyToQuicker(true, "", cookies, msg.serial);
+	});
+}
+
+/**
+ * 创建Bookmark
+ * @param {data:{parentId, index, title, url}} msg 
+ */
+function createBookmark(msg) {
+	chrome.bookmarks.create(msg.data, function (result) {
+		sendReplyToQuicker(true, "", result, msg.serial);
+	})
+}
+
+/**
+ * 获取整个收藏夹
+ * @param {*} msg 
+ */
+function getBookmarks(msg) {
+	chrome.bookmarks.getTree(function (result) {
+		sendReplyToQuicker(true, "", result, msg.serial);
+	})
+}
+
+/**
+ * 搜索收藏夹
+ * @param { data:{query: string}} msg 
+ */
+function searchBookmarks(msg) {
+	chrome.bookmarks.search(msg.data.query, function (result) {
+		sendReplyToQuicker(true, "", result, msg.serial);
+	});
+}
+
+/**
+ * 清除浏览历史
+ * @param {data:{options, dataToRemove} } msg 
+ */
+function removeBrowsingData(msg) {
+	chrome.browsingData.remove(data.options, data.dataToRemove, function () {
+		sendReplyToQuicker(true, "", "", msg.serial);
+	});
+}
+
+/**
+ * 获取浏览器TopSites信息
+ * @param {*} msg 
+ */
+function getTopSites(msg) {
+	chrome.topSites.get(function (data) {
+		sendReplyToQuicker(true, "", data, msg.serial);
+	});
+}
+
+/**
+ * 下载文件
+ * @param {*} msg 
+ */
+function downloadFile(msg) {
+	chrome.downloads.download(msg.data, function (downloadId) {
+		sendReplyToQuicker(true, "", downloadId, msg.serial);
+	});
+}
+
+/**
+ * Deletes all items from the history.
+ * @param {*} msg 
+ */
+function deleteAllHistory(msg) {
+	chrome.history.deleteAll(msg.data, function (downloadId) {
+		sendReplyToQuicker(true, "", downloadId, msg.serial);
+	});
+}
+
+/**
+ * 将网页保存为MHTML文件
+ * @param {data:{tabId, fileName}} msg 
+ */
+function saveAsMHTML(msg) {
+
+	executeOnTab(msg, function (tabId, theMsg) {
+		chrome.pageCapture.saveAsMHTML({ tabId: tabId }, function (mhtmlData) {
+			var url = URL.createObjectURL(mhtmlData);
+			chrome.downloads.download({
+				url: url,
+				filename: msg.data.fileName
+			});
+		});
+
+		sendReplyToQuicker(true, "", downloadId, msg.serial);
+	})
+}
+
+/**
+ * 恢复关闭的标签页
+ * @param {*} msg 
+ */
+function restoreRecentClosedSession(msg) {
+	chrome.sessions.restore(null, function (session) {
+		sendReplyToQuicker(true, "", session, msg.serial);
+	});
+}
+
+/**
+ * 获得最近关闭的标签页
+ * @param {*} msg 
+ */
+function getRecentlyClosed(msg) {
+	chrome.sessions.getRecentlyClosed({ maxResults: msg.data.maxResults }, function (sessions) {
+		sendReplyToQuicker(true, "", sessions, msg.serial);
+	});
+}
+
+/**
+ * 获得所有已安装扩展的信息
+ * @param {*} msg 
+ */
+function managementGetAll(msg) {
+	chrome.management.getAll(function (result) {
+		sendReplyToQuicker(true, "", result, msg.serial);
+	});
+}
+
+/**
+ * 执行调试命令
+ * @param {*} msg 
+ */
+function sendDebuggerCommand(msg) {
+	chrome.debugger.attach(msg.data.target, "0.1", function () {
+		chrome.debugger.sendCommand(msg.data.target, msg.data.method, msg.data.commandParams, function (result) {
+
+			console.log('debugger result:', result);
+
+			if (msg.data.callbackScript) {
+				eval()
+			}
+
+			chrome.debugger.detach(msg.data.target);
+		});
+	})
+
+	sendReplyToQuicker(true, "", "", msg.serial);
+}
+
+/**
+ * 截屏整个页面
+ * code from : https://stackoverflow.com/q/64343246/3335415
+ * @param {*} msg 
+ */
+function captureFullPage(msg) {
+
+	function captureScreenshot(tabId) {
+		console.log(`{page}: captureScreenshot: status=aboutTo, tabId=${tabId}`);
+
+		chrome.debugger.sendCommand(
+			{ tabId: tabId },
+			"Page.captureScreenshot",
+			{
+				format: "jpeg",
+				quality: 60,
+				fromSurface: false,
+			},
+			(response) => {
+				if (chrome.runtime.lastError) {
+					console.log(`{back}: captureScreenshot: status=failed, tabId=${tabId}`);
+				} else {
+					var dataType = typeof response.data;
+					console.log(
+						`{back}: captureScreenshot: status=success, tabId=${tabId}, dataType=${dataType}`
+					);
+					let base_64_data = "data:image/jpg;base64," + response.data;
+					setTimeout(() => {
+						clearDeviceMetricsOverride(tabId, base_64_data);
+					}, 500);
+				}
+			}
+		);
+
+		console.log(`{page}: captureScreenshot: status=commandSent, tabId=${tabId}`);
+	}
+
+	//---------------------------------------------------------------------------
+	function setDeviceMetricsOverride(tabId, height, width) {
+		chrome.debugger.sendCommand(
+			{
+				tabId: tabId,
+			},
+			"Emulation.setDeviceMetricsOverride",
+			{ height: height, width: width, deviceScaleFactor: 1, mobile: false },
+			function () {
+				setTimeout(() => {
+					captureScreenshot(tabId);
+				}, 500);
+			}
+		);
+	}
+
+
+	//---------------------------------------------------------------------------
+
+	function getLayoutMetrics(tabId) {
+		chrome.debugger.sendCommand(
+			{
+				tabId: tabId,
+			},
+			"Page.getLayoutMetrics",
+			{},
+			function (object) {
+				console.log("---- get layout w: " + object.contentSize.width);
+				console.log("---- get layout h: " + object.contentSize.height);
+				const { height, width } = object.contentSize;
+				setDeviceMetricsOverride(tabId, height, width);
+			}
+		);
+	}
+
+	//---------------------------------------------------------------------------
+
+	function setColorlessBackground(tabId) {
+		console.log(`{back}: setColorlessBackground: status=aboutTo, tabId=${tabId}`);
+
+		chrome.debugger.sendCommand(
+			{ tabId: tabId },
+			"Emulation.setDefaultBackgroundColorOverride",
+			{ color: { r: 0, g: 0, b: 0, a: 0 } },
+			function () {
+				console.log(
+					`{back}: setColorlessBackground: status=enabled, tabId=${tabId}`
+				);
+				getLayoutMetrics(tabId);
+			}
+		);
+
+		console.log(
+			`{back}: setColorlessBackground: status=commandSent, tabId=${tabId}`
+		);
+	}
+
+	//---------------------------------------------------------------------------
+
+	function enableDTPage(tabId) {
+		console.log(`{back}: enableDTPage: status=aboutTo, tabId=${tabId}`);
+
+		chrome.debugger.sendCommand({ tabId: tabId }, "Page.enable", {}, function () {
+			console.log(`{back}: enableDTPage: status=enabled, tabId=${tabId}`);
+			setColorlessBackground(tabId);
+		});
+
+		console.log(`{back}: enableDTPage: status=commandSent, tabId=${tabId}`);
+	}
+
+	function clearDeviceMetricsOverride(tabId, base_64_data) {
+		chrome.debugger.sendCommand(
+			{
+				tabId: tabId,
+			},
+			"Emulation.clearDeviceMetricsOverride",
+			function () {
+				postData(base_64_data, tabId);
+			}
+		);
+	}
+
+	//---------------------------------------------------------------------------
+
+	function attachToDebugger(tabId) {
+		try {
+
+			chrome.debugger.attach({ tabId: tabId }, "1.0", () => {
+				if (chrome.runtime.lastError) {
+					console.log(
+						`{back}: debugger attach failed: error=${chrome.runtime.lastError.message}`
+					);
+				} else {
+					console.log(`{back}: debugger attach success: tabId=${tabId}`);
+					enableDTPage(tabId);
+				}
+			});
+
+		} catch { }
+	}
+
+	//
+	// main code
+
+	executeOnTab(msg.tabId, function (tabId, theMsg) {
+		attachToDebugger(tabId);
+
+		sendReplyToQuicker(true, "", "", msg.serial);
+	});
+}
+
+////#endregion
 
 
 /**
@@ -502,15 +905,15 @@ function updateUi() {
 	var views = chrome.extension.getViews({
 		type: "popup"
 	});
-	
-	
+
+
 
 	for (var i = 0; i < views.length; i++) {
 		views[i].document.getElementById('connectionState').innerHTML
 			= isConnected ? "<span class='success'>已连接</span>" : "<span class='warning'>未连接</span>";
 
-		
-			views[i].document.getElementById('browser').innerText = browser;
+
+		views[i].document.getElementById('browser').innerText = browser;
 	}
 
 	if (!isConnected) {
@@ -602,7 +1005,7 @@ function getBrowserName() {
 	if (isIE) {
 		return "ie";
 	}
-	
+
 	if (isOpera) {
 		return "opera";
 	}
