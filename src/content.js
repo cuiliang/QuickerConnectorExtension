@@ -26,4 +26,3 @@ function _x(STR_XPATH) {
     return xnodes;
 }
 
-console.log('content script installed (from Quicker).')
