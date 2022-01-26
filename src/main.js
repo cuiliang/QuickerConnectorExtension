@@ -8,25 +8,35 @@ const host = "com.getquicker.chromeagent";
 console.log("Quicker Chrome Connector starting...");
 
 // to support firefox
-chrome = chrome || browser;
+chrome = chrome || _browser;
 
 var manifest = chrome.runtime.getManifest();
 
 // 与浏览器的连接端口
-var port = null;
-var version = manifest.version;
-var browser = getBrowserName();
-var isConnected = false;
+var _port = null;
+var _version = manifest.version;	// 扩展版本
+var _browser = getBrowserName();	// 浏览器名称
+
+
+
+var _isHostConnected = false;		// 是否连接到MessageHost
+var _isQuickerConnected = false;		// 是否连接到Quicker
+var _quickerVersion = "";			// Quicker版本号
+var _hostVersion = "";				// MessageHost版本号
+
+
+// 消息类型
+const MSG_UPDATE_QUICKER_STATE = 11;  	// 更新Quicker的连接状态
 
 // 更新显示为未连接状态
-updateConnectionState(false);
+updateConnectionState(false, false);
 
 // 开始连接
 connect();
 
 
 chrome.runtime.onStartup.addListener(function () {
-	if (port == null) {
+	if (_port == null) {
 		console.log('runtime on startup. connect()...');
 		connect();
 	}
@@ -55,36 +65,36 @@ chrome.runtime.onInstalled.addListener(function (details) {
 function connect() {
 
 	// clean up old connection
-	if (port !== null && port !== undefined) {
+	if (_port !== null && _port !== undefined) {
 		removePortListener();
 	}
 
 	// ? 是否有可能端口
-	if (port === null || port === undefined) {
+	if (_port === null || _port === undefined) {
 		try {
 			console.log("Connecting to " + host);
 			// 连接到QuickerAgent
-			port = chrome.runtime.connectNative(host);
+			_port = chrome.runtime.connectNative(host);
 			console.log('connected to host');
 
-			updateConnectionState(true);
+			updateConnectionState(true, false);
 		} catch (e) {
 			console.error(e);
-			port = null;
-			updateConnectionState(false);
+			_port = null;
+			updateConnectionState(false, false);
 			return;
 		}
 	}
 
 
 	// 收到Quicker消息
-	port.onMessage.addListener(OnPortMessage);
+	_port.onMessage.addListener(OnPortMessage);
 	// 关闭插件等情况下，需要将port设置为null，否则QuickerAgent.exe不会退出
-	port.onDisconnect.addListener(OnPortDisconnect);
+	_port.onDisconnect.addListener(OnPortDisconnect);
 
 	if (chrome.runtime.lastError) {
 		console.warn("Error setup port: " + chrome.runtime.lastError.message);
-		port = null;
+		_port = null;
 		return;
 	} else {
 		console.log("Connected to native port");
@@ -96,17 +106,17 @@ function connect() {
 
 	// 发送Hello消息，报告浏览器类型和版本
 	try {
-		port.postMessage({
+		_port.postMessage({
 			replyTo: -1,
 			message: "Hello!",
-			browser: browser,
-			version: version,
+			browser: _browser,
+			version: _version,
 			isSuccess: true
 		});
 
 	} catch (e) {
 		console.error(e);
-		port = null;
+		_port = null;
 	}
 }
 
@@ -115,9 +125,9 @@ function connect() {
  */
 function removePortListener() {
 	try {
-		if (port) {
-			port.onMessage.removeListener(OnPortMessage);
-			port.onDisconnect.removeListener(OnPortDisconnect);
+		if (_port) {
+			_port.onMessage.removeListener(OnPortMessage);
+			_port.onDisconnect.removeListener(OnPortDisconnect);
 		}
 	}
 	catch (e) {
@@ -133,9 +143,9 @@ function OnPortDisconnect(message) {
 	console.log("Port Disconnected");
 
 	removePortListener();
-	port = null;
+	_port = null;
 
-	updateConnectionState(false);
+	updateConnectionState(false, false);
 
 	if (chrome.runtime.lastError) {
 		var errMsg = chrome.runtime.lastError.message;
@@ -145,7 +155,7 @@ function OnPortDisconnect(message) {
 			retryTime = 10000;
 		}
 
-		port = null;
+		_port = null;
 		setTimeout(function () {
 			connect();
 		}, retryTime);
@@ -167,7 +177,7 @@ function OnPortDisconnect(message) {
 function OnPortMessage(msg) {
 	console.log("Received msg:", msg.serial, msg);
 
-	if (port == null) {
+	if (_port == null) {
 		console.warn("OnPortMessage: port is null!");
 		console.log(msg);
 		return;
@@ -205,13 +215,13 @@ function sendReplyToQuicker(isSuccess, message, data, replyTo) {
 	}
 
 	// 发送结果
-	port.postMessage({
+	_port.postMessage({
 		"isSuccess": isSuccess,
 		"replyTo": replyTo,
 		"message": message,
 		"data": data,
-		"version": version,
-		"browser": browser
+		"version": _version,
+		"browser": _browser
 	});
 }
 
@@ -222,6 +232,21 @@ function sendReplyToQuicker(isSuccess, message, data, replyTo) {
  * @param {*} msg 命令消息
  */
 function processQuickerCmd(msg) {
+	
+	// 更新Quicker连接状态。消息类型《UpdateQuickerConnectionStateData》
+	if (msg.messageType === MSG_UPDATE_QUICKER_STATE){
+		
+		if (msg.data.isConnected){
+			_browser = msg.data.browser;
+			_quickerVersion = msg.data.quickerVersion;
+			_hostVersion = msg.data.hostVersion;
+		}
+
+		updateConnectionState(true, msg.data.isConnected);
+		
+		return;
+	}
+
 	try {
 		switch (msg.cmd) {
 			case "OpenUrl":
@@ -892,8 +917,9 @@ function runScriptOnAllTabs(func) {
  * 更新连接状态
  * @param {*} isConnected 是否连接
  */
-function updateConnectionState(connected) {
-	isConnected = connected;
+function updateConnectionState(hostConnected, quickerConnected) {
+	_isHostConnected = hostConnected;
+	_isQuickerConnected = quickerConnected;
 
 	updateUi();
 }
@@ -906,20 +932,31 @@ function updateUi() {
 		type: "popup"
 	});
 
-
+	
 
 	for (var i = 0; i < views.length; i++) {
-		views[i].document.getElementById('connectionState').innerHTML
-			= isConnected ? "<span class='success'>已连接</span>" : "<span class='warning'>未连接</span>";
+		views[i].document.getElementById('msgHostConnection').innerHTML = 
+			_isHostConnected ? `<span class='success'>已连接 <span class='version'>${_hostVersion}</span></span>`
+				: "<span class='error' title='Quicker或消息代理尚未安装'>未连接</span>";
+
+		views[i].document.getElementById('quickerConnection').innerHTML = 
+			_isQuickerConnected ? `<span class='success'>已连接 <span class='version'>${_quickerVersion}</span></span>`
+			: "<span class='error' title='Quicker未启动或版本过旧'>未连接</span>";
 
 
-		views[i].document.getElementById('browser').innerText = browser;
+		views[i].document.getElementById('browser').innerText = _browser;
+		views[i].document.getElementById('extVersion').innerHTML = _version;
 	}
 
-	if (!isConnected) {
+	if (!_isHostConnected) {
 		chrome.browserAction.setBadgeText({ text: "×" });
 		chrome.browserAction.setBadgeBackgroundColor({ color: '#ff0000' });
-	} else {
+	} else if(!_isQuickerConnected){
+		chrome.browserAction.setBadgeText({ text: "×" });
+		chrome.browserAction.setBadgeBackgroundColor({ color: 'rgb(255, 174, 0)' });	
+	}
+	else {
+		
 		chrome.browserAction.setBadgeText({ text: '' });
 	}
 }
