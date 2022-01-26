@@ -3,8 +3,7 @@ window.onload = function () {
     console.log("onload" + Date())
 
     // 请后台代码更新界面
-    chrome.runtime.sendMessage({ cmd: "update_ui" }, function (response) {
-    });
+    chrome.runtime.sendMessage({ cmd: "update_ui" }, function (response) { });
 
     //
     // update permission list
