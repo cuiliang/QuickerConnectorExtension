@@ -56,7 +56,60 @@ chrome.runtime.onInstalled.addListener(function (details) {
 
 	// 将客户端脚本更新到所有已打开的标签页上
 	installToExistingTabs();
+
+	// setup report
+	setupReports();
 });
+
+
+/* #region  状态报告 */
+function setupReports() {
+	chrome.tabs.onActivated.addListener(function (activeInfo){
+		if(_isQuickerConnected){
+			var tab = chrome.tabs.get(activeInfo.tabId, function(currTab){
+				reportUrlChange(activeInfo.tabId, currTab.url);
+			})
+		}
+	});
+
+	chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
+		if (!_isQuickerConnected){
+			return;
+		}
+
+		if (changeInfo.url){
+			reportUrlChange(tabId, changeInfo.url);
+		}
+	  });
+}
+
+function reportUrlChange(tabId, url){
+	console.log('report url change:', tabId, url);
+}
+
+/* #endregion */
+
+
+// const CONTEXT_MENU_ID = "MY_CONTEXT_MENU";
+// function getword(info,tab) {
+// 	console.log('menu clicked:', info, tab);
+//   if (info.menuItemId !== CONTEXT_MENU_ID) {
+//     return;
+//   }
+//   console.log("Word " + info.selectionText + " was clicked.");
+//   chrome.tabs.create({  
+//     url: "http://www.google.com/search?q=" + info.selectionText
+//   });
+// }
+// for(var i=0; i<10;i++){
+// 	chrome.contextMenus.create({
+// 		title: "Search: %s", 
+// 		contexts:["selection"], 
+// 		id: CONTEXT_MENU_ID + i
+// 	  });
+// }
+
+// chrome.contextMenus.onClicked.addListener(getword)
 
 
 /**
@@ -232,18 +285,18 @@ function sendReplyToQuicker(isSuccess, message, data, replyTo) {
  * @param {*} msg 命令消息
  */
 function processQuickerCmd(msg) {
-	
+
 	// 更新Quicker连接状态。消息类型《UpdateQuickerConnectionStateData》
-	if (msg.messageType === MSG_UPDATE_QUICKER_STATE){
-		
-		if (msg.data.isConnected){
+	if (msg.messageType === MSG_UPDATE_QUICKER_STATE) {
+
+		if (msg.data.isConnected) {
 			_browser = msg.data.browser;
 			_quickerVersion = msg.data.quickerVersion;
 			_hostVersion = msg.data.hostVersion;
 		}
 
 		updateConnectionState(true, msg.data.isConnected);
-		
+
 		return;
 	}
 
@@ -932,16 +985,16 @@ function updateUi() {
 		type: "popup"
 	});
 
-	
+
 
 	for (var i = 0; i < views.length; i++) {
-		views[i].document.getElementById('msgHostConnection').innerHTML = 
+		views[i].document.getElementById('msgHostConnection').innerHTML =
 			_isHostConnected ? `<span class='success'>已连接 <span class='version'>${_hostVersion}</span></span>`
 				: "<span class='error' title='Quicker或消息代理尚未安装'>未连接</span>";
 
-		views[i].document.getElementById('quickerConnection').innerHTML = 
+		views[i].document.getElementById('quickerConnection').innerHTML =
 			_isQuickerConnected ? `<span class='success'>已连接 <span class='version'>${_quickerVersion}</span></span>`
-			: "<span class='error' title='Quicker未启动或版本过旧'>未连接</span>";
+				: "<span class='error' title='Quicker未启动或版本过旧'>未连接</span>";
 
 
 		views[i].document.getElementById('browser').innerText = _browser;
@@ -951,12 +1004,12 @@ function updateUi() {
 	if (!_isHostConnected) {
 		chrome.browserAction.setBadgeText({ text: "×" });
 		chrome.browserAction.setBadgeBackgroundColor({ color: '#ff0000' });
-	} else if(!_isQuickerConnected){
+	} else if (!_isQuickerConnected) {
 		chrome.browserAction.setBadgeText({ text: "×" });
-		chrome.browserAction.setBadgeBackgroundColor({ color: 'rgb(255, 174, 0)' });	
+		chrome.browserAction.setBadgeBackgroundColor({ color: 'rgb(255, 174, 0)' });
 	}
 	else {
-		
+
 		chrome.browserAction.setBadgeText({ text: '' });
 	}
 }

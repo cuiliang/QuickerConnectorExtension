@@ -32,7 +32,8 @@
     "nativeMessaging",
     "tabs",
     "<all_urls>",
-    "debugger"
+    "debugger",
+    "contextMenus"
   ],
   "optional_permissions":[
     "bookmarks",
