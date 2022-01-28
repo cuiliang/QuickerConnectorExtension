@@ -6,7 +6,7 @@
   "description": "Native message connector with Quicker application",
   "background": {
     "scripts": [
-      "main.js"
+      "background/main.js"
     ],
     "persistent": false
   },
@@ -16,8 +16,8 @@
         "<all_urls>"
       ],
       "js": [
-        "jquery-3.5.1.min.js",
-        "content.js"
+        "libs/jquery-3.6.0.min.js",
+        "content/content.js"
       ],
       "all_frames": true
     }
@@ -26,14 +26,15 @@
     "128": "icon-128.png"
   },
   "browser_action": {
-    "default_popup": "popup.html"
+    "default_popup": "popup/popup.html"
   },
   "permissions": [
     "nativeMessaging",
     "tabs",
     "<all_urls>",
     "debugger",
-    "contextMenus"
+    "contextMenus",
+    "storage"
   ],
   "optional_permissions":[
     "bookmarks",
