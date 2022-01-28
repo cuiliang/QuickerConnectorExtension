@@ -25,6 +25,7 @@ var _isQuickerConnected = false;		// 是否连接到Quicker
 var _quickerVersion = "";			// Quicker版本号
 var _hostVersion = "";				// MessageHost版本号
 
+var _enableReport = false;			// 是否开启状态报告
 
 // 消息类型
 const MSG_UPDATE_QUICKER_STATE = 11;  	// 更新Quicker的连接状态
@@ -63,8 +64,12 @@ chrome.runtime.onInstalled.addListener(function (details) {
 	// 将客户端脚本更新到所有已打开的标签页上
 	installToExistingTabs();
 
+	// 
+	loadSettings();
+
 	// setup report
 	setupReports();
+	
 });
 
 
@@ -73,7 +78,7 @@ function setupReports() {
 	chrome.tabs.onActivated.addListener(function (activeInfo) {
 		//console.log('isQuickerConnected:', _isQuickerConnected);
 
-		if (_isQuickerConnected) {
+		if (_isQuickerConnected && _enableReport) {
 			var tab = chrome.tabs.get(activeInfo.tabId, function (currTab) {
 				reportUrlChange(activeInfo.tabId, currTab.url);
 			})
@@ -81,15 +86,25 @@ function setupReports() {
 	});
 
 	chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
-		if (!_isQuickerConnected) {
-			return;
-		}
-
-		if (changeInfo.url) {
-			reportUrlChange(tabId, changeInfo.url);
-		}
+		if (_isQuickerConnected 
+			&& _enableReport) {
+			if (changeInfo.url) {
+				reportUrlChange(tabId, changeInfo.url);
+			}
+		}		
 	});
 }
+
+/**
+ * 加载设置
+ */
+function loadSettings(){
+	chrome.storage.sync.get('enableReport', function(data){
+		console.log('load settings:', data);
+		_enableReport = data.enableReport;
+	} );
+}
+
 
 /**
  * 发送最新的网址以方便切换场景
@@ -1053,11 +1068,24 @@ function updateUi() {
  */
 chrome.runtime.onMessage.addListener(function (messageFromContentOrPopup, sender, sendResponse) {
 	console.log('received message:', messageFromContentOrPopup);
-	if (messageFromContentOrPopup.cmd == "update_ui") {
-		updateUi();
 
-		sendResponse();
-	}
+	switch(messageFromContentOrPopup.cmd){
+		case 'update_ui':
+			{
+				updateUi();
+
+				sendResponse();
+			}
+			break;
+		case 'local_setting_changed':
+			{
+				loadSettings();
+				sendResponse();
+			}
+			break;
+		default:
+			console.log('unknown message from popup or content:', messageFromContentOrPopup);
+	}	
 
 })
 
