@@ -32,6 +32,7 @@ var _enableReport = false;			// 是否开启状态报告
 const MSG_UPDATE_QUICKER_STATE = 11;  	// 更新Quicker的连接状态
 const MSG_REPORT_ACTIVE_TAB_STATE = 5;	// 报告活动tab的最新网址
 const MSG_COMMAND_RESP = 3; 			// 命令响应消息
+const MSG_REGISTER_CONTEXT_MENU = 6; 	// 注册右键菜单
 
 /* #endregion */
 
@@ -327,6 +328,9 @@ function processQuickerCmd(msg) {
 		onMsgQuickerStateChange(msg);
 
 		return;
+	}else if (msg.messageType === MSG_REGISTER_CONTEXT_MENU){
+		onMessageRegisterContextMenu(msg);
+		return;
 	}
 
 	try {
@@ -443,6 +447,32 @@ function onMsgQuickerStateChange(msg) {
 	updateConnectionState(true, msg.data.isConnected);
 
 }
+
+const QUICKER_ROOT_MENU_ID = "quicker_root_menu";
+/**
+ * 注册右键菜单
+ * @param {*} msg 
+ */
+function onMessageRegisterContextMenu(msg){
+	chrome.contextMenus.removeAll();
+
+	msg.data.items.forEach(function(item){
+		chrome.contextMenus.create(item);
+	});
+}
+
+function menuItemClicked(info,tab) {
+	console.log('menu clicked:', info, tab);
+//   if (info.menuItemId !== CONTEXT_MENU_ID) {
+//     return;
+//   }
+//   console.log("Word " + info.selectionText + " was clicked.");
+//   chrome.tabs.create({  
+//     url: "http://www.google.com/search?q=" + info.selectionText
+//   });
+}
+
+chrome.contextMenus.onClicked.addListener(menuItemClicked);
 
 /**
  *  打开网址
