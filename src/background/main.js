@@ -4,6 +4,7 @@
  * 反馈网址：https://github.com/cuiliang/Quicker
  */
 
+/* #region  Variables */
 const host = "com.getquicker.chromeagent";
 console.log("Quicker Chrome Connector starting...");
 
@@ -27,6 +28,9 @@ var _hostVersion = "";				// MessageHost版本号
 
 // 消息类型
 const MSG_UPDATE_QUICKER_STATE = 11;  	// 更新Quicker的连接状态
+
+/* #endregion */
+
 
 // 更新显示为未连接状态
 updateConnectionState(false, false);
@@ -64,26 +68,26 @@ chrome.runtime.onInstalled.addListener(function (details) {
 
 /* #region  状态报告 */
 function setupReports() {
-	chrome.tabs.onActivated.addListener(function (activeInfo){
-		if(_isQuickerConnected){
-			var tab = chrome.tabs.get(activeInfo.tabId, function(currTab){
+	chrome.tabs.onActivated.addListener(function (activeInfo) {
+		if (_isQuickerConnected) {
+			var tab = chrome.tabs.get(activeInfo.tabId, function (currTab) {
 				reportUrlChange(activeInfo.tabId, currTab.url);
 			})
 		}
 	});
 
 	chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
-		if (!_isQuickerConnected){
+		if (!_isQuickerConnected) {
 			return;
 		}
 
-		if (changeInfo.url){
+		if (changeInfo.url) {
 			reportUrlChange(tabId, changeInfo.url);
 		}
-	  });
+	});
 }
 
-function reportUrlChange(tabId, url){
+function reportUrlChange(tabId, url) {
 	console.log('report url change:', tabId, url);
 }
 

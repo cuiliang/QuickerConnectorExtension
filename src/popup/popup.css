@@ -1,0 +1,114 @@
+body {
+    padding: 0;
+    min-width: 300px;
+    font-size: 14px;       
+    margin: 0;
+    
+}
+html{
+    padding: 0;
+    margin: 0;
+}
+
+td{
+    font-size: 14px;
+}
+
+section {
+    padding: 10px;
+    margin: 0;
+}
+
+h4 {
+    color: #444;
+}
+
+span.success {
+    color: green;
+}
+
+span.warning {
+    color: rgb(255, 174, 0);
+    font-weight: bold;
+}
+
+span.error {
+    color: red;
+    font-weight: bold;
+}
+
+#pnlPermissions {
+    padding-left: 10px;
+}
+
+button {
+    background-color: #FAFAFA;
+    border: 1px solid #AAA;
+    border-radius: 3px;
+    padding: 3px 6px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #F0F0F0;
+}
+
+#pnlPermissions button {
+    display: block;
+    margin: 1px;
+    padding: 4px 2px;
+    text-align: left;
+    border: 0 solid transparent;
+    cursor: pointer;
+    background-color: transparent;
+}
+
+#pnlPermissions button:hover {
+    background-color: #F0F0F0;
+}
+
+span.mark {
+    width: 30px;
+    text-align: center;
+    display: inline-block;
+}
+
+.btn-area {
+    text-align: left;
+    padding-left: 10px;
+}
+
+.btn-area button {
+    margin: 5px 3px 5px 10px;
+}
+
+hr {
+    height: 1px;
+    border: 0;
+    background-color: #F0F0F0;
+    margin: 0;
+}
+
+a {
+    text-decoration: none;
+    color: #3583eb;
+}
+
+a:visited {
+    text-decoration: none;
+}
+
+.header{
+    padding:5px 10px;
+    background-color: #FAFAFA;
+}
+.footer{
+    display: flex;justify-content: space-between;
+    padding:5px 15px 8px 10px;
+    background-color: #FAFAFA;
+}
+
+.version{
+    color:#AAA;
+}
