@@ -28,6 +28,8 @@ var _hostVersion = "";				// MessageHost版本号
 
 // 消息类型
 const MSG_UPDATE_QUICKER_STATE = 11;  	// 更新Quicker的连接状态
+const MSG_REPORT_ACTIVE_TAB_STATE = 5;	// 报告活动tab的最新网址
+const MSG_COMMAND_RESP = 3; 			// 命令响应消息
 
 /* #endregion */
 
@@ -69,6 +71,8 @@ chrome.runtime.onInstalled.addListener(function (details) {
 /* #region  状态报告 */
 function setupReports() {
 	chrome.tabs.onActivated.addListener(function (activeInfo) {
+		//console.log('isQuickerConnected:', _isQuickerConnected);
+
 		if (_isQuickerConnected) {
 			var tab = chrome.tabs.get(activeInfo.tabId, function (currTab) {
 				reportUrlChange(activeInfo.tabId, currTab.url);
@@ -87,8 +91,14 @@ function setupReports() {
 	});
 }
 
+/**
+ * 发送最新的网址以方便切换场景
+ * @param {int} tabId 
+ * @param {string} url 
+ */
 function reportUrlChange(tabId, url) {
 	console.log('report url change:', tabId, url);
+	sendReplyToQuicker(true, "", {tabId, url}, 0, MSG_REPORT_ACTIVE_TAB_STATE);
 }
 
 /* #endregion */
@@ -257,9 +267,9 @@ function OnPortMessage(msg) {
  * @param {*} data 		成功时，返回的数据内容
  * @param {integer} replyTo   所回复的来源消息的编号
  */
-function sendReplyToQuicker(isSuccess, message, data, replyTo) {
+function sendReplyToQuicker(isSuccess, message, data, replyTo, msgType = MSG_COMMAND_RESP) {
 
-	console.log('sending message,isSuccess:', isSuccess, 'replyTo:', replyTo, 'message:', message, 'data:', data)
+	//;console.log('sending message,isSuccess:', isSuccess, 'replyTo:', replyTo, 'message:', message, 'data:', data)
 
 	// 如果返回的结果是简单类型，将其封装在对象中
 	if (data) {
@@ -271,15 +281,19 @@ function sendReplyToQuicker(isSuccess, message, data, replyTo) {
 		}
 	}
 
-	// 发送结果
-	_port.postMessage({
+	var msg = {
+		"messageType": msgType,
 		"isSuccess": isSuccess,
 		"replyTo": replyTo,
 		"message": message,
 		"data": data,
 		"version": _version,
 		"browser": _browser
-	});
+	};
+	console.log('sending message to quicker:', msg);
+
+	// 发送结果
+	_port.postMessage(msg);
 }
 
 
@@ -293,13 +307,7 @@ function processQuickerCmd(msg) {
 	// 更新Quicker连接状态。消息类型《UpdateQuickerConnectionStateData》
 	if (msg.messageType === MSG_UPDATE_QUICKER_STATE) {
 
-		if (msg.data.isConnected) {
-			_browser = msg.data.browser;
-			_quickerVersion = msg.data.quickerVersion;
-			_hostVersion = msg.data.hostVersion;
-		}
-
-		updateConnectionState(true, msg.data.isConnected);
+		onMsgQuickerStateChange(msg);
 
 		return;
 	}
@@ -392,6 +400,28 @@ function processQuickerCmd(msg) {
 
 
 
+}
+
+/**
+ * Quicker 连接状态变化了
+ * @param {*} msg 
+ */
+function onMsgQuickerStateChange(msg) {
+	if (msg.data.isConnected) {
+		_browser = msg.data.browser;
+		_quickerVersion = msg.data.quickerVersion;
+		_hostVersion = msg.data.hostVersion;
+
+
+		// 报告最新状态
+		chrome.tabs.query({ active: true, currentWindow: true }, function(tabs){
+			if (tabs.length > 0){
+				reportUrlChange(tabs[0].tabId, tabs[0].url);
+			}
+		})
+	}
+
+	updateConnectionState(true, msg.data.isConnected);
 }
 
 /**
