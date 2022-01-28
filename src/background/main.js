@@ -1,3 +1,4 @@
+"use strict";
 /**
  * 本插件用于连接Quicker软件。
  * 网址：https://getquicker.net
@@ -41,6 +42,11 @@ updateConnectionState(false, false);
 // 开始连接
 connect();
 
+// 
+loadSettings();
+
+// setup report
+setupReports();
 
 chrome.runtime.onStartup.addListener(function () {
 	if (_port == null) {
@@ -64,12 +70,8 @@ chrome.runtime.onInstalled.addListener(function (details) {
 	// 将客户端脚本更新到所有已打开的标签页上
 	installToExistingTabs();
 
-	// 
-	loadSettings();
 
-	// setup report
-	setupReports();
-	
+
 });
 
 
@@ -86,23 +88,23 @@ function setupReports() {
 	});
 
 	chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
-		if (_isQuickerConnected 
+		if (_isQuickerConnected
 			&& _enableReport) {
 			if (changeInfo.url) {
 				reportUrlChange(tabId, changeInfo.url);
 			}
-		}		
+		}
 	});
 }
 
 /**
  * 加载设置
  */
-function loadSettings(){
-	chrome.storage.sync.get('enableReport', function(data){
+function loadSettings() {
+	chrome.storage.sync.get('enableReport', function (data) {
 		console.log('load settings:', data);
 		_enableReport = data.enableReport;
-	} );
+	});
 }
 
 
@@ -113,7 +115,7 @@ function loadSettings(){
  */
 function reportUrlChange(tabId, url) {
 	console.log('report url change:', tabId, url);
-	sendReplyToQuicker(true, "", {tabId, url}, 0, MSG_REPORT_ACTIVE_TAB_STATE);
+	sendReplyToQuicker(true, "", { tabId, url }, 0, MSG_REPORT_ACTIVE_TAB_STATE);
 }
 
 /* #endregion */
@@ -429,14 +431,17 @@ function onMsgQuickerStateChange(msg) {
 
 
 		// 报告最新状态
-		chrome.tabs.query({ active: true, currentWindow: true }, function(tabs){
-			if (tabs.length > 0){
-				reportUrlChange(tabs[0].tabId, tabs[0].url);
-			}
-		})
+		if (_enableReport) {
+			chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+				if (tabs.length > 0) {
+					reportUrlChange(tabs[0].tabId, tabs[0].url);
+				}
+			})
+		}
 	}
 
 	updateConnectionState(true, msg.data.isConnected);
+
 }
 
 /**
@@ -1069,7 +1074,7 @@ function updateUi() {
 chrome.runtime.onMessage.addListener(function (messageFromContentOrPopup, sender, sendResponse) {
 	console.log('received message:', messageFromContentOrPopup);
 
-	switch(messageFromContentOrPopup.cmd){
+	switch (messageFromContentOrPopup.cmd) {
 		case 'update_ui':
 			{
 				updateUi();
@@ -1085,7 +1090,7 @@ chrome.runtime.onMessage.addListener(function (messageFromContentOrPopup, sender
 			break;
 		default:
 			console.log('unknown message from popup or content:', messageFromContentOrPopup);
-	}	
+	}
 
 })
 
