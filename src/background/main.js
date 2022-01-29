@@ -33,6 +33,7 @@ const MSG_UPDATE_QUICKER_STATE = 11;  	// 更新Quicker的连接状态
 const MSG_REPORT_ACTIVE_TAB_STATE = 5;	// 报告活动tab的最新网址
 const MSG_COMMAND_RESP = 3; 			// 命令响应消息
 const MSG_REGISTER_CONTEXT_MENU = 6; 	// 注册右键菜单
+const MSG_MENU_CLICK =7;				// 菜单点击
 
 /* #endregion */
 
@@ -121,27 +122,6 @@ function reportUrlChange(tabId, url) {
 
 /* #endregion */
 
-
-// const CONTEXT_MENU_ID = "MY_CONTEXT_MENU";
-// function getword(info,tab) {
-// 	console.log('menu clicked:', info, tab);
-//   if (info.menuItemId !== CONTEXT_MENU_ID) {
-//     return;
-//   }
-//   console.log("Word " + info.selectionText + " was clicked.");
-//   chrome.tabs.create({  
-//     url: "http://www.google.com/search?q=" + info.selectionText
-//   });
-// }
-// for(var i=0; i<10;i++){
-// 	chrome.contextMenus.create({
-// 		title: "Search: %s", 
-// 		contexts:["selection"], 
-// 		id: CONTEXT_MENU_ID + i
-// 	  });
-// }
-
-// chrome.contextMenus.onClicked.addListener(getword)
 
 
 /**
@@ -456,13 +436,22 @@ const QUICKER_ROOT_MENU_ID = "quicker_root_menu";
 function onMessageRegisterContextMenu(msg){
 	chrome.contextMenus.removeAll();
 
-	msg.data.items.forEach(function(item){
-		chrome.contextMenus.create(item);
-	});
+	if (msg.data.items.length > 0){
+		// sub menus
+		msg.data.items.forEach(function(item){
+			chrome.contextMenus.create(item);
+		});
+	}
 }
 
 function menuItemClicked(info,tab) {
 	console.log('menu clicked:', info, tab);
+
+	if (!_isQuickerConnected){
+		alert('尚未连接到Quicker！');
+		return;
+	}
+
 //   if (info.menuItemId !== CONTEXT_MENU_ID) {
 //     return;
 //   }
@@ -470,6 +459,11 @@ function menuItemClicked(info,tab) {
 //   chrome.tabs.create({  
 //     url: "http://www.google.com/search?q=" + info.selectionText
 //   });
+	var data = {
+		info,
+		tab
+	};
+	sendReplyToQuicker(true, "menu clicked", data, 0, MSG_MENU_CLICK);
 }
 
 chrome.contextMenus.onClicked.addListener(menuItemClicked);
@@ -1055,10 +1049,17 @@ function runScriptOnAllTabs(func) {
  * @param {*} isConnected 是否连接
  */
 function updateConnectionState(hostConnected, quickerConnected) {
+	if (_isQuickerConnected && !quickerConnected){
+		//quicker disconnected
+		chrome.contextMenus.removeAll();
+	}
+
 	_isHostConnected = hostConnected;
 	_isQuickerConnected = quickerConnected;
 
 	updateUi();
+
+	
 }
 
 /**
