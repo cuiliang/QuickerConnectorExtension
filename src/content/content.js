@@ -26,3 +26,8 @@ function _x(STR_XPATH) {
     return xnodes;
 }
 
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log('msg recved:', message);
+    return true;
+});

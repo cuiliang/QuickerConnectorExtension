@@ -8,47 +8,93 @@ window.onload = function () {
     //
     // update permission list
     // 
-    var manifest = chrome.runtime.getManifest();
-    var optional_permissions = manifest.optional_permissions;
-    console.log(optional_permissions);
-
-    var container = document.getElementById('pnlPermissions');
-
-    for (var permission of optional_permissions) {
-        // 赋值给局部变量，避免回调的时候变化
-        let perm = permission;
-        var btn = document.createElement("BUTTON");
-        btn.id = 'btn_' + perm;
-        
-    
-        container.appendChild(btn);
-
-        updatePermissionButton(perm);
-
-        btn.addEventListener('click', function(e){
-           
-            e.stopPropagation();
-            togglePermission(perm);
-            
-            return false;
-        });
-    }
+    updatePermissionList();
 
     // update config option
     //
-    var chkEnable = document.getElementById('chkEnableReport');
-    
-    chrome.storage.sync.get('enableReport', function(data){
-        console.log('value:', data);
-        chkEnable.checked = data.enableReport;
-    } );
+    updateSettings();
 
-    chkEnable.addEventListener('change', function(){
-       chrome.storage.sync.set({enableReport: this.checked});
+    // tools
+    //
+    setupTools();
+}
 
-       // 通知background脚本
-       chrome.runtime.sendMessage({ cmd: "local_setting_changed" }, function (response) { });
+/**
+ * 工具按钮处理
+ */
+function setupTools(){
+
+  // 选择元素
+  var btnPickElement = document.getElementById('btnPickElement');
+
+  btnPickElement.addEventListener('click', function(){
+      startPickElement();
+      window.close();
+  });
+}
+
+/**
+ * 选择元素
+ */
+function startPickElement(){
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
+        var currTab = tabs[0];
+
+        chrome.tabs.executeScript(currTab.id, {file: '/libs/picker/pick.js'})
     });
+}
+
+
+
+/**
+ * 更新设置界面
+ */
+function updateSettings() {
+  var chkEnable = document.getElementById('chkEnableReport');
+
+  chrome.storage.sync.get('enableReport', function (data) {
+    console.log('value:', data);
+    chkEnable.checked = data.enableReport;
+  });
+
+  chkEnable.addEventListener('change', function () {
+    chrome.storage.sync.set({ enableReport: this.checked });
+
+    // 通知background脚本
+    chrome.runtime.sendMessage({ cmd: "local_setting_changed" }, function (response) { });
+  });
+}
+
+
+/**
+ * 更新权限列表
+ */
+function updatePermissionList() {
+  var manifest = chrome.runtime.getManifest();
+  var optional_permissions = manifest.optional_permissions;
+  console.log(optional_permissions);
+
+  var container = document.getElementById('pnlPermissions');
+
+  for (var permission of optional_permissions) {
+    // 赋值给局部变量，避免回调的时候变化
+    let perm = permission;
+    var btn = document.createElement("BUTTON");
+    btn.id = 'btn_' + perm;
+
+
+    container.appendChild(btn);
+
+    updatePermissionButton(perm);
+
+    btn.addEventListener('click', function (e) {
+
+      e.stopPropagation();
+      togglePermission(perm);
+
+      return false;
+    });
+  }
 }
 
 /**

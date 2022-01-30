@@ -34,7 +34,8 @@
     "<all_urls>",
     "debugger",
     "contextMenus",
-    "storage"
+    "storage",
+    "tts"
   ],
   "optional_permissions":[
     "bookmarks",
