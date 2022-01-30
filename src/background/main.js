@@ -1,9 +1,11 @@
+"use strict";
 /**
  * 本插件用于连接Quicker软件。
  * 网址：https://getquicker.net
  * 反馈网址：https://github.com/cuiliang/Quicker
  */
 
+/* #region  Variables */
 const host = "com.getquicker.chromeagent";
 console.log("Quicker Chrome Connector starting...");
 
@@ -24,9 +26,17 @@ var _isQuickerConnected = false;		// 是否连接到Quicker
 var _quickerVersion = "";			// Quicker版本号
 var _hostVersion = "";				// MessageHost版本号
 
+var _enableReport = false;			// 是否开启状态报告
 
 // 消息类型
 const MSG_UPDATE_QUICKER_STATE = 11;  	// 更新Quicker的连接状态
+const MSG_REPORT_ACTIVE_TAB_STATE = 5;	// 报告活动tab的最新网址
+const MSG_COMMAND_RESP = 3; 			// 命令响应消息
+const MSG_REGISTER_CONTEXT_MENU = 6; 	// 注册右键菜单
+const MSG_MENU_CLICK =7;				// 菜单点击
+
+/* #endregion */
+
 
 // 更新显示为未连接状态
 updateConnectionState(false, false);
@@ -34,6 +44,11 @@ updateConnectionState(false, false);
 // 开始连接
 connect();
 
+// 
+loadSettings();
+
+// setup report
+setupReports();
 
 chrome.runtime.onStartup.addListener(function () {
 	if (_port == null) {
@@ -56,7 +71,57 @@ chrome.runtime.onInstalled.addListener(function (details) {
 
 	// 将客户端脚本更新到所有已打开的标签页上
 	installToExistingTabs();
+
+
+
 });
+
+
+/* #region  状态报告 */
+function setupReports() {
+	chrome.tabs.onActivated.addListener(function (activeInfo) {
+		//console.log('isQuickerConnected:', _isQuickerConnected);
+
+		if (_isQuickerConnected && _enableReport) {
+			var tab = chrome.tabs.get(activeInfo.tabId, function (currTab) {
+				reportUrlChange(activeInfo.tabId, currTab.url);
+			})
+		}
+	});
+
+	chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
+		if (_isQuickerConnected
+			&& _enableReport) {
+			if (changeInfo.url) {
+				reportUrlChange(tabId, changeInfo.url);
+			}
+		}
+	});
+}
+
+/**
+ * 加载设置
+ */
+function loadSettings() {
+	chrome.storage.sync.get('enableReport', function (data) {
+		console.log('load settings:', data);
+		_enableReport = data.enableReport;
+	});
+}
+
+
+/**
+ * 发送最新的网址以方便切换场景
+ * @param {int} tabId 
+ * @param {string} url 
+ */
+function reportUrlChange(tabId, url) {
+	console.log('report url change:', tabId, url);
+	sendReplyToQuicker(true, "", { tabId, url }, 0, MSG_REPORT_ACTIVE_TAB_STATE);
+}
+
+/* #endregion */
+
 
 
 /**
@@ -200,9 +265,9 @@ function OnPortMessage(msg) {
  * @param {*} data 		成功时，返回的数据内容
  * @param {integer} replyTo   所回复的来源消息的编号
  */
-function sendReplyToQuicker(isSuccess, message, data, replyTo) {
+function sendReplyToQuicker(isSuccess, message, data, replyTo, msgType = MSG_COMMAND_RESP) {
 
-	console.log('sending message,isSuccess:', isSuccess, 'replyTo:', replyTo, 'message:', message, 'data:', data)
+	//;console.log('sending message,isSuccess:', isSuccess, 'replyTo:', replyTo, 'message:', message, 'data:', data)
 
 	// 如果返回的结果是简单类型，将其封装在对象中
 	if (data) {
@@ -214,15 +279,19 @@ function sendReplyToQuicker(isSuccess, message, data, replyTo) {
 		}
 	}
 
-	// 发送结果
-	_port.postMessage({
+	var msg = {
+		"messageType": msgType,
 		"isSuccess": isSuccess,
 		"replyTo": replyTo,
 		"message": message,
 		"data": data,
 		"version": _version,
 		"browser": _browser
-	});
+	};
+	console.log('sending message to quicker:', msg);
+
+	// 发送结果
+	_port.postMessage(msg);
 }
 
 
@@ -232,18 +301,15 @@ function sendReplyToQuicker(isSuccess, message, data, replyTo) {
  * @param {*} msg 命令消息
  */
 function processQuickerCmd(msg) {
-	
-	// 更新Quicker连接状态。消息类型《UpdateQuickerConnectionStateData》
-	if (msg.messageType === MSG_UPDATE_QUICKER_STATE){
-		
-		if (msg.data.isConnected){
-			_browser = msg.data.browser;
-			_quickerVersion = msg.data.quickerVersion;
-			_hostVersion = msg.data.hostVersion;
-		}
 
-		updateConnectionState(true, msg.data.isConnected);
-		
+	// 更新Quicker连接状态。消息类型《UpdateQuickerConnectionStateData》
+	if (msg.messageType === MSG_UPDATE_QUICKER_STATE) {
+
+		onMsgQuickerStateChange(msg);
+
+		return;
+	}else if (msg.messageType === MSG_REGISTER_CONTEXT_MENU){
+		onMessageRegisterContextMenu(msg);
 		return;
 	}
 
@@ -336,6 +402,71 @@ function processQuickerCmd(msg) {
 
 
 }
+
+/**
+ * Quicker 连接状态变化了
+ * @param {*} msg 
+ */
+function onMsgQuickerStateChange(msg) {
+	if (msg.data.isConnected) {
+		_browser = msg.data.browser;
+		_quickerVersion = msg.data.quickerVersion;
+		_hostVersion = msg.data.hostVersion;
+
+
+		// 报告最新状态
+		if (_enableReport) {
+			chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+				if (tabs.length > 0) {
+					reportUrlChange(tabs[0].tabId, tabs[0].url);
+				}
+			})
+		}
+	}
+
+	updateConnectionState(true, msg.data.isConnected);
+
+}
+
+const QUICKER_ROOT_MENU_ID = "quicker_root_menu";
+/**
+ * 注册右键菜单
+ * @param {*} msg 
+ */
+function onMessageRegisterContextMenu(msg){
+	chrome.contextMenus.removeAll();
+
+	if (msg.data.items.length > 0){
+		// sub menus
+		msg.data.items.forEach(function(item){
+			chrome.contextMenus.create(item);
+		});
+	}
+}
+
+function menuItemClicked(info,tab) {
+	console.log('menu clicked:', info, tab);
+
+	if (!_isQuickerConnected){
+		alert('尚未连接到Quicker！');
+		return;
+	}
+
+//   if (info.menuItemId !== CONTEXT_MENU_ID) {
+//     return;
+//   }
+//   console.log("Word " + info.selectionText + " was clicked.");
+//   chrome.tabs.create({  
+//     url: "http://www.google.com/search?q=" + info.selectionText
+//   });
+	var data = {
+		info,
+		tab
+	};
+	sendReplyToQuicker(true, "menu clicked", data, 0, MSG_MENU_CLICK);
+}
+
+chrome.contextMenus.onClicked.addListener(menuItemClicked);
 
 /**
  *  打开网址
@@ -918,10 +1049,17 @@ function runScriptOnAllTabs(func) {
  * @param {*} isConnected 是否连接
  */
 function updateConnectionState(hostConnected, quickerConnected) {
+	if (_isQuickerConnected && !quickerConnected){
+		//quicker disconnected
+		chrome.contextMenus.removeAll();
+	}
+
 	_isHostConnected = hostConnected;
 	_isQuickerConnected = quickerConnected;
 
 	updateUi();
+
+	
 }
 
 /**
@@ -932,16 +1070,16 @@ function updateUi() {
 		type: "popup"
 	});
 
-	
+
 
 	for (var i = 0; i < views.length; i++) {
-		views[i].document.getElementById('msgHostConnection').innerHTML = 
+		views[i].document.getElementById('msgHostConnection').innerHTML =
 			_isHostConnected ? `<span class='success'>已连接 <span class='version'>${_hostVersion}</span></span>`
 				: "<span class='error' title='Quicker或消息代理尚未安装'>未连接</span>";
 
-		views[i].document.getElementById('quickerConnection').innerHTML = 
+		views[i].document.getElementById('quickerConnection').innerHTML =
 			_isQuickerConnected ? `<span class='success'>已连接 <span class='version'>${_quickerVersion}</span></span>`
-			: "<span class='error' title='Quicker未启动或版本过旧'>未连接</span>";
+				: "<span class='error' title='Quicker未启动或版本过旧'>未连接</span>";
 
 
 		views[i].document.getElementById('browser').innerText = _browser;
@@ -951,12 +1089,12 @@ function updateUi() {
 	if (!_isHostConnected) {
 		chrome.browserAction.setBadgeText({ text: "×" });
 		chrome.browserAction.setBadgeBackgroundColor({ color: '#ff0000' });
-	} else if(!_isQuickerConnected){
+	} else if (!_isQuickerConnected) {
 		chrome.browserAction.setBadgeText({ text: "×" });
-		chrome.browserAction.setBadgeBackgroundColor({ color: 'rgb(255, 174, 0)' });	
+		chrome.browserAction.setBadgeBackgroundColor({ color: 'rgb(255, 174, 0)' });
 	}
 	else {
-		
+
 		chrome.browserAction.setBadgeText({ text: '' });
 	}
 }
@@ -966,10 +1104,23 @@ function updateUi() {
  */
 chrome.runtime.onMessage.addListener(function (messageFromContentOrPopup, sender, sendResponse) {
 	console.log('received message:', messageFromContentOrPopup);
-	if (messageFromContentOrPopup.cmd == "update_ui") {
-		updateUi();
 
-		sendResponse();
+	switch (messageFromContentOrPopup.cmd) {
+		case 'update_ui':
+			{
+				updateUi();
+
+				sendResponse();
+			}
+			break;
+		case 'local_setting_changed':
+			{
+				loadSettings();
+				sendResponse();
+			}
+			break;
+		default:
+			console.log('unknown message from popup or content:', messageFromContentOrPopup);
 	}
 
 })

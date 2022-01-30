@@ -7,6 +7,7 @@ window.onload = function () {
 
     //
     // update permission list
+    // 
     var manifest = chrome.runtime.getManifest();
     var optional_permissions = manifest.optional_permissions;
     console.log(optional_permissions);
@@ -33,7 +34,21 @@ window.onload = function () {
         });
     }
 
+    // update config option
+    //
+    var chkEnable = document.getElementById('chkEnableReport');
+    
+    chrome.storage.sync.get('enableReport', function(data){
+        console.log('value:', data);
+        chkEnable.checked = data.enableReport;
+    } );
 
+    chkEnable.addEventListener('change', function(){
+       chrome.storage.sync.set({enableReport: this.checked});
+
+       // 通知background脚本
+       chrome.runtime.sendMessage({ cmd: "local_setting_changed" }, function (response) { });
+    });
 }
 
 /**

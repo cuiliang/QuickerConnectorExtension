@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <link href='popup.css' rel='stylesheet' />
+</head>
+
+<body>
+    <!-- Top bar -->
+   <div style='height:4px; background-color: #3583eb;'>
+   </div>
+    <section>
+        <h4 style="margin: 3px 0 5px 0;">连接状态：</h4>
+        <table style='border:none; margin:0 0 0 20px;'>
+            <tr>
+                <td>
+                    浏览器标识
+                </td>
+                <td width="10">：</td>
+                <td>
+                    <span id="browser" ></span>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    消息代理
+                </td>
+                <td>：</td>
+                <td>
+                    <span id="msgHostConnection"></span>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Quicker
+                </td>
+                <td>：</td>
+                <td>
+                    <span id="quickerConnection"></span>
+                </td>
+            </tr>
+        </table>
+    </section>
+    <hr>
+    <section>
+        <!-- <h4 style="margin: 0px 0 5px 0;">
+            功能选项：
+        </h4> -->
+        <div style='margin: 0 0 0 20px;'>
+            <label><input type="checkbox" id='chkEnableReport'><span>开启网址同步</span></label>
+        </div>
+    </section>
+    <hr>
+    <section>
+        <h4 style="margin: 0px 0 5px 0;">
+            可选权限：
+            <span style='display: inline-block;margin:0 20px;'>
+                <button id='btn-allow-all'><span style="color:green">✔</span> 允许全部</button>
+                <button id='btn-remove-all'><span title="已禁止" style="color:red;">🛇</span> 禁用全部</button>
+            </span>
+        </h4>
+        <div id='pnlPermissions' style="display: flex; flex-direction:column;">
+        </div>
+    </section>
+    
+    <hr>
+    <div class='footer'>
+        <span style='color:#AAA'>
+            Quicker连接器 <span id='extVersion'></span>
+        </span>
+        <a href='https://getquicker.net/r?id=12' target="_blank">使用文档</a>
+    </div>
+    <script src="popup.js"></script>
+</body>
+
+</html>
