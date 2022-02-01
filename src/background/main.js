@@ -240,7 +240,7 @@ function OnPortDisconnect(message) {
  * 		cmd: 命令
  */
 function OnPortMessage(msg) {
-	console.log("Received msg:", msg.serial, msg);
+	console.log("Received msg from Quicker:", msg.serial, msg);
 
 	if (_port == null) {
 		console.warn("OnPortMessage: port is null!");
@@ -630,7 +630,7 @@ function runBackgroundScript(msg) {
 function runScript(msg) {
 	var tabId = msg.tabId;
 	var script = msg.data.script;
-	var allFrames = msg.data.allFrames === undefined ? true : msg.data.allFrames;
+	
 
 	console.log('running script on tab:', script);
 
@@ -644,25 +644,45 @@ function runScript(msg) {
 			if (IsChromeTabUrl(tabs[0].url)) {
 				sendReplyToQuicker(false, "Can not run on this page.", {}, msg.serial)
 			} else {
-				_runScriptOnTab(tabs[0].id, script, msg, allFrames);
+				_runScriptOnTab(tabs[0].id, script, msg);
 			}
 
 		});
 	} else {
-		_runScriptOnTab(tabId, script, msg, allFrames);
+		_runScriptOnTab(tabId, script, msg);
 	}
 }
 
 // 对指定tab执行脚本
 function _runScriptOnTab(tabId, script, msg, allFrames) {
+	var allFrames = msg.data.allFrames === undefined ? true : msg.data.allFrames;
+	var frameId = msg.data.frameId || 0;
+	var waitManualReturn = msg.data.waitManualReturn;
+
+	var code = waitManualReturn 
+		? script.replace('qk_msg_serial', msg.serial)  // 如果需要等待手工响应，则在脚本中插入消息序号变量。
+		: script;
+
 	chrome.tabs.executeScript(tabId,
 		{
-			code: script,
+			code: code,
 			allFrames: allFrames,
+			frameId: frameId
 		},
 		function (result) {
-			console.log('run script result:', result);
-			sendReplyToQuicker(true, "", result, msg.serial);
+			if (chrome.runtime.lastError){
+				console.warn('execute tab script error:', chrome.runtime.lastError)
+				sendReplyToQuicker(false, chrome.runtime.lastError.message, result, msg.serial);
+			}else{
+				console.log('run script result:', result);
+
+				// 如果需要等待手动响应，则不直接返回脚本结果，而是等待脚本返回
+				if (!waitManualReturn){
+					sendReplyToQuicker(true, "", result, msg.serial);
+				}
+			}
+			
+			
 		})
 }
 
@@ -1121,7 +1141,7 @@ function updateUi() {
  * 监听popup窗口的消息
  */
 chrome.runtime.onMessage.addListener(function (messageFromContentOrPopup, sender, sendResponse) {
-	console.log('received message:', messageFromContentOrPopup);
+	console.log('msg from popup/content:', messageFromContentOrPopup);
 
 	switch (messageFromContentOrPopup.cmd) {
 		case 'update_ui':
