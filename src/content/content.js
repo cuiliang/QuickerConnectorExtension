@@ -31,3 +31,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('msg recved:', message);
     return true;
 });
+
+
+/**
+ * 向Quicker发送消息，由后台脚本中转
+ * @param {*}} msg 
+ */
+function sendToQuicker(msg){
+    chrome.runtime.sendMessage({cmd: 'send_to_quicker', data: msg}, (respones)=>{
+
+    });
+}

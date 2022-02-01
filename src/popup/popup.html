@@ -3,23 +3,29 @@
 
 <head>
     <meta charset="utf-8" />
-    <link href='popup.css' rel='stylesheet' />    
+    <link href='popup.css' rel='stylesheet' />
+    <link href='../libs/hint/hint.min.css' rel="stylesheet" />
+    <!-- <link href='/libs/bs/bootstrap.min.css' rel='stylesheet' />    -->
 </head>
 
 <body>
     <!-- Top bar -->
-   <div style='height:4px; background-color: #3583eb;'>
-   </div>
+    <div style='height:4px; background-color: #3583eb;'>
+    </div>
+
     <section>
-        <h4 style="margin: 3px 0 5px 0;">连接状态：</h4>
+        <div style='display:flex; flex-direction: row; justify-content: space-between;'>
+            <h4 style="margin: 3px 0 3px 0;">连接状态：</h4>
+        </div>
+
         <table style='border:none; margin:0 0 0 20px;'>
             <tr>
                 <td>
-                    浏览器标识
+                    浏览器
                 </td>
                 <td width="10">：</td>
                 <td>
-                    <span id="browser" ></span>
+                    <span id="browser" class='hint--bottom' aria-label='当前识别的浏览器名称'></span>
                 </td>
             </tr>
             <tr>
@@ -43,12 +49,12 @@
         </table>
     </section>
     <hr>
-    <section>
-        <!-- <h4 style="margin: 0px 0 5px 0;">
-            功能选项：
-        </h4> -->
+    <section>       
         <div style='margin: 0 0 0 20px;'>
-            <label><input type="checkbox" id='chkEnableReport'><span>开启网址同步</span></label>
+            <label  class='hint--bottom' style='display:inline-block;' aria-label='实时更新当前网址到Quicker。'>
+                <input style='vertical-align: middle; margin-right: 4px; margin-top: 6px;' type="checkbox" id='chkEnableReport'>
+                <span style='vertical-align: middle; margin-top: 0;'>开启网址同步</span>
+            </label>
         </div>
     </section>
     <hr>
@@ -56,25 +62,28 @@
         <h4 style="margin: 0px 0 5px 0;">
             可选权限：
             <span style='display: inline-block;margin:0 20px;'>
-                <button id='btn-allow-all'><span style="color:green">✔</span> 允许全部</button>
-                <button id='btn-remove-all'><span title="已禁止" style="color:red;">🛇</span> 禁用全部</button>
+                <button id='btn-allow-all' class='hint--bottom'  aria-label='允许所有可选权限'><span style="color:green">✔</span> 允许全部</button>
+                <button id='btn-remove-all' class='hint--bottom'  aria-label='禁止所有可选权限'><span title="已禁止" style="color:red;">🛇</span> 禁用全部</button>
             </span>
         </h4>
         <div id='pnlPermissions' style="display: flex; flex-direction:column;">
         </div>
     </section>
-    
+
+
     <hr>
     <div class='footer'>
-        <span>
-            <button id='btnPickElement'>S</button>
+        <span style='font-size: 0.9em; color:#666'>
+            <span>QuickerConnector</span>
+            <span id='extVersion'></span>
         </span>
         <span style='color:#AAA'>
-            <span id='extVersion'></span>
+
             <a href='https://getquicker.net/r?id=12' target="_blank">文档</a>
         </span>
-        
+
     </div>
+    <!-- <script src='../libs/bs/bootstrap.bundle.min.js'></script> -->
     <script src="popup.js"></script>
 </body>
 

@@ -264,6 +264,7 @@ function OnPortMessage(msg) {
  * @param {*} message 	失败时，消息内容
  * @param {*} data 		成功时，返回的数据内容
  * @param {integer} replyTo   所回复的来源消息的编号
+ * @param {integer?} msgType  可选的消息类型。 用于非命令响应的情况
  */
 function sendReplyToQuicker(isSuccess, message, data, replyTo, msgType = MSG_COMMAND_RESP) {
 
@@ -387,6 +388,9 @@ function processQuickerCmd(msg) {
 				break;
 			case "CaptureFullPage":
 				captureFullPage(msg);
+				break;
+			case "Speek":
+				speekText(msg);
 				break;
 			default:
 				console.error("Unknown command:" + msg.cmd);
@@ -626,6 +630,7 @@ function runBackgroundScript(msg) {
 function runScript(msg) {
 	var tabId = msg.tabId;
 	var script = msg.data.script;
+	var allFrames = msg.data.allFrames === undefined ? true : msg.data.allFrames;
 
 	console.log('running script on tab:', script);
 
@@ -639,21 +644,21 @@ function runScript(msg) {
 			if (IsChromeTabUrl(tabs[0].url)) {
 				sendReplyToQuicker(false, "Can not run on this page.", {}, msg.serial)
 			} else {
-				_runScriptOnTab(tabs[0].id, script, msg);
+				_runScriptOnTab(tabs[0].id, script, msg, allFrames);
 			}
 
 		});
 	} else {
-		_runScriptOnTab(tabId, script, msg);
+		_runScriptOnTab(tabId, script, msg, allFrames);
 	}
 }
 
 // 对指定tab执行脚本
-function _runScriptOnTab(tabId, script, msg) {
+function _runScriptOnTab(tabId, script, msg, allFrames) {
 	chrome.tabs.executeScript(tabId,
 		{
 			code: script,
-			allFrames: true,
+			allFrames: allFrames,
 		},
 		function (result) {
 			console.log('run script result:', result);
@@ -854,6 +859,19 @@ function sendDebuggerCommand(msg) {
 	})
 
 	sendReplyToQuicker(true, "", "", msg.serial);
+}
+
+/**
+ * 使用tts接口播放文本
+ * @param {*} msg 
+ */
+function speekText(msg){
+	var text = msg.data.text;
+	var options = msg.data.options;
+
+	chrome.tts.speak(text, options, ()=>{
+
+	});
 }
 
 /**
@@ -1075,11 +1093,11 @@ function updateUi() {
 	for (var i = 0; i < views.length; i++) {
 		views[i].document.getElementById('msgHostConnection').innerHTML =
 			_isHostConnected ? `<span class='success'>已连接 <span class='version'>${_hostVersion}</span></span>`
-				: "<span class='error' title='Quicker或消息代理尚未安装'>未连接</span>";
+				: "<span class='error hint--bottom'  aria-label='Quicker或消息代理尚未安装'>未连接</span>";
 
 		views[i].document.getElementById('quickerConnection').innerHTML =
 			_isQuickerConnected ? `<span class='success'>已连接 <span class='version'>${_quickerVersion}</span></span>`
-				: "<span class='error' title='Quicker未启动或版本过旧'>未连接</span>";
+				: "<span class='error hint--bottom'  aria-label='Quicker未启动或版本过旧'>未连接</span>";
 
 
 		views[i].document.getElementById('browser').innerText = _browser;
@@ -1108,8 +1126,8 @@ chrome.runtime.onMessage.addListener(function (messageFromContentOrPopup, sender
 	switch (messageFromContentOrPopup.cmd) {
 		case 'update_ui':
 			{
+				// 点击popup时，更新popup显示
 				updateUi();
-
 				sendResponse();
 			}
 			break;
@@ -1119,6 +1137,23 @@ chrome.runtime.onMessage.addListener(function (messageFromContentOrPopup, sender
 				sendResponse();
 			}
 			break;
+			case 'send_to_quicker':
+			{
+				// 转发消息给Quicker
+				var msg = Object.assign({}, {
+					"messageType": 0,
+					"isSuccess": true,
+					"replyTo": 0,
+					"message": '',
+					"version": _version,
+					"browser": _browser
+				}, messageFromContentOrPopup.data);
+				_port.postMessage(msg);
+
+				// 返回
+				sendResponse();
+			}
+				break;
 		default:
 			console.log('unknown message from popup or content:', messageFromContentOrPopup);
 	}
