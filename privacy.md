@@ -4,7 +4,8 @@ Quicker Connector Extension runs locally: All data processing and storage is don
 
 The software does not send any data back to us. This can be easily verify since the extension is open-sourced on https://github.com/cuiliang/QuickerConnectorExtension.
 
-The software is designed to execute customer defined scripts. You should confirm that the script is safe before using it in this extension.
+The software is designed to execute customer defined scripts. 
+You should confirm that the script is safe before using it in this extension.
 
 
 
