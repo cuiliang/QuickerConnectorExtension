@@ -16,7 +16,10 @@
 - Quicker Connector在这里开源：https://github.com/cuiliang/QuickerConnectorExtension ，用户可以通过源代码检查其中是否包含非必要的隐私数据读取。 Quicker软件通过C#语言编写，也可以较为容易的对其内部机制进行审查。
 
 
-# Privacy Policy of Quicker Connector (English version, translated by https://translate.google.com/) 
+# Privacy Policy of Quicker Connector (En)
+
+English version, translated by https://translate.google.com/
+
 **Term Description:**
 - Quicker Connector: the browser extension referred to by this project;
 - Quicker software: a Windows productivity tool (https://getquicker.net), which is used to perform user-defined actions to improve the efficiency of operating Windows or other software;
@@ -26,9 +29,9 @@
 **Privacy Policy Description:**
 - Quicker Connector, as the connection intermediary between Quicker software and browser, is responsible for transmitting user-defined instructions and returning running results.
 - Quicker Connector and Quicker software itself do not actively collect, store or disclose users' private data.
-- Quicker Connector and Quicker software do not do any active detection and analysis of the data content, except for converting data formats and other situations to realize Quicker action functions for the scripts that are run and the returned results.
-- In the process of executing user scripts, Quicker Connector may obtain private data (including cookies, browsing history, TopSites, etc.) according to the actual content of the scripts being run, and transmit them to Quicker actions through the Native Message Host , and allow users to use this information through action steps. During this process, Quicker Connector and Quicker software do not recognize, store or send this information to any third-party server.
-- Quicker Connector applies for some optional permissions through the manifest file, allowing users to enable or disable these permissions in the extension popup interface. These permissions include: "bookmarks","browsingData","topSites","downloads","history","pageCapture","cookies","sessions","management". The purpose of applying for these optional permissions is to support users to run scripts when necessary to achieve their specific needs. When the user does not use a specific script, the corresponding permission can be turned off to avoid accidental private data reading.
+- Quicker Connector and Quicker software do not do any active detection and analysis of the data content  or the returned results, except for converting data formats and other situations to realize Quicker action functions.
+- In the process of executing user scripts, Quicker Connector may obtain private data (including cookies, browsing history, TopSites, etc.) according to the actual content of the scripts being run, and transmit them to Quicker actions through the Native Message Host , and allow users to use these data through action steps. During this process, Quicker Connector and Quicker software do not recognize, store or send these data to any third-party server.
+- Quicker Connector applies for some optional permissions through the manifest file, allowing users to enable or disable these permissions in the extension popup window. These permissions include: "bookmarks","browsingData","topSites","downloads","history","pageCapture","cookies","sessions","management". The purpose of applying for these optional permissions is to enable users to run scripts when necessary to achieve their specific needs. When the user does not use a specific script, the corresponding permission can be turned off to avoid accidental private data reading.
 - When users use Quicker actions shared by others, they should check the source code of the actions to ensure that they do not contain unnecessary private data reading and use.
 - Quicker Connector is open source here: https://github.com/cuiliang/QuickerConnectorExtension, users can check whether it contains unnecessary private data reading through the source code. Quicker software is written in C# language, and its internal mechanism can also be easily reviewed.
 
