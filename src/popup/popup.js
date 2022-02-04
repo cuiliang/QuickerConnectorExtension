@@ -46,16 +46,6 @@ function setupTools() {
   // });
 }
 
-/**
- * 选择元素
- */
-function startPickElement() {
-  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-    var currTab = tabs[0];
-
-    chrome.tabs.executeScript(currTab.id, { file: '/libs/picker/pick.js' })
-  });
-}
 
 
 
