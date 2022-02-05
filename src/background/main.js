@@ -33,7 +33,7 @@ const MSG_UPDATE_QUICKER_STATE = 11;  	// 更新Quicker的连接状态
 const MSG_REPORT_ACTIVE_TAB_STATE = 5;	// 报告活动tab的最新网址
 const MSG_COMMAND_RESP = 3; 			// 命令响应消息
 const MSG_REGISTER_CONTEXT_MENU = 6; 	// 注册右键菜单
-const MSG_MENU_CLICK =7;				// 菜单点击
+const MSG_MENU_CLICK = 7;				// 菜单点击
 
 /* #endregion */
 
@@ -309,7 +309,7 @@ function processQuickerCmd(msg) {
 		onMsgQuickerStateChange(msg);
 
 		return;
-	}else if (msg.messageType === MSG_REGISTER_CONTEXT_MENU){
+	} else if (msg.messageType === MSG_REGISTER_CONTEXT_MENU) {
 		onMessageRegisterContextMenu(msg);
 		return;
 	}
@@ -437,32 +437,32 @@ const QUICKER_ROOT_MENU_ID = "quicker_root_menu";
  * 注册右键菜单
  * @param {*} msg 
  */
-function onMessageRegisterContextMenu(msg){
+function onMessageRegisterContextMenu(msg) {
 	chrome.contextMenus.removeAll();
 
-	if (msg.data.items.length > 0){
+	if (msg.data.items.length > 0) {
 		// sub menus
-		msg.data.items.forEach(function(item){
+		msg.data.items.forEach(function (item) {
 			chrome.contextMenus.create(item);
 		});
 	}
 }
 
-function menuItemClicked(info,tab) {
+function menuItemClicked(info, tab) {
 	console.log('menu clicked:', info, tab);
 
-	if (!_isQuickerConnected){
+	if (!_isQuickerConnected) {
 		alert('尚未连接到Quicker！');
 		return;
 	}
 
-//   if (info.menuItemId !== CONTEXT_MENU_ID) {
-//     return;
-//   }
-//   console.log("Word " + info.selectionText + " was clicked.");
-//   chrome.tabs.create({  
-//     url: "http://www.google.com/search?q=" + info.selectionText
-//   });
+	//   if (info.menuItemId !== CONTEXT_MENU_ID) {
+	//     return;
+	//   }
+	//   console.log("Word " + info.selectionText + " was clicked.");
+	//   chrome.tabs.create({  
+	//     url: "http://www.google.com/search?q=" + info.selectionText
+	//   });
 	var data = {
 		info,
 		tab
@@ -630,7 +630,7 @@ function runBackgroundScript(msg) {
 function runScript(msg) {
 	var tabId = msg.tabId;
 	var script = msg.data.script;
-	
+
 
 	console.log('running script on tab:', script);
 
@@ -656,33 +656,39 @@ function runScript(msg) {
 // 对指定tab执行脚本
 function _runScriptOnTab(tabId, script, msg, allFrames) {
 	var allFrames = msg.data.allFrames === undefined ? true : msg.data.allFrames;
-	var frameId = msg.data.frameId || 0;
+	var frameId = msg.data.frameId;
 	var waitManualReturn = msg.data.waitManualReturn;
 
-	var code = waitManualReturn 
+	var code = waitManualReturn
 		? script.replace('qk_msg_serial', msg.serial)  // 如果需要等待手工响应，则在脚本中插入消息序号变量。
 		: script;
 
-	chrome.tabs.executeScript(tabId,
-		{
-			code: code,
-			allFrames: allFrames,
-			frameId: frameId
-		},
+	var details = {
+		code: code,
+		allFrames: allFrames
+	};
+	if (frameId) {
+		details['frameId'] = frameId;
+	}
+
+
+	chrome.tabs.executeScript(tabId, details,
 		function (result) {
-			if (chrome.runtime.lastError){
-				console.warn('execute tab script error:', chrome.runtime.lastError)
+			if (chrome.runtime.lastError 
+				&& chrome.runtime.lastError.message.includes("result is non-structured-clonable data") === false) 
+				{
+				console.warn('execute tab script error:', chrome.runtime.lastError)				
 				sendReplyToQuicker(false, chrome.runtime.lastError.message, result, msg.serial);
-			}else{
+			} else {
 				console.log('run script result:', result);
 
 				// 如果需要等待手动响应，则不直接返回脚本结果，而是等待脚本返回
-				if (!waitManualReturn){
+				if (!waitManualReturn) {
 					sendReplyToQuicker(true, "", result, msg.serial);
 				}
 			}
-			
-			
+
+
 		})
 }
 
@@ -885,11 +891,11 @@ function sendDebuggerCommand(msg) {
  * 使用tts接口播放文本
  * @param {*} msg 
  */
-function speekText(msg){
+function speekText(msg) {
 	var text = msg.data.text;
 	var options = msg.data.options;
 
-	chrome.tts.speak(text, options, ()=>{
+	chrome.tts.speak(text, options, () => {
 
 	});
 }
@@ -1087,7 +1093,7 @@ function runScriptOnAllTabs(func) {
  * @param {*} isConnected 是否连接
  */
 function updateConnectionState(hostConnected, quickerConnected) {
-	if (_isQuickerConnected && !quickerConnected){
+	if (_isQuickerConnected && !quickerConnected) {
 		//quicker disconnected
 		chrome.contextMenus.removeAll();
 	}
@@ -1097,7 +1103,7 @@ function updateConnectionState(hostConnected, quickerConnected) {
 
 	updateUi();
 
-	
+
 }
 
 /**
@@ -1157,7 +1163,7 @@ chrome.runtime.onMessage.addListener(function (messageFromContentOrPopup, sender
 				sendResponse();
 			}
 			break;
-			case 'send_to_quicker':
+		case 'send_to_quicker':
 			{
 				// 转发消息给Quicker
 				var msg = Object.assign({}, {
@@ -1173,7 +1179,7 @@ chrome.runtime.onMessage.addListener(function (messageFromContentOrPopup, sender
 				// 返回
 				sendResponse();
 			}
-				break;
+			break;
 		default:
 			console.log('unknown message from popup or content:', messageFromContentOrPopup);
 	}
