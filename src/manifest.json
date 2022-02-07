@@ -44,8 +44,7 @@
     "history",
     "pageCapture",
     "cookies",
-    "sessions",
-    "management"
+    "sessions"
   ],
   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
   "homepage_url": "https://getquicker.net"
