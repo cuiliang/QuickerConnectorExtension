@@ -16,12 +16,14 @@ Browser extension for Quicker  Quicker的浏览器扩展
 - https://microsoftedge.microsoft.com/addons/detail/quicker-connector/hcnknmobjnlekfkbcllhcoldbppkgpda
 
 ## Firefox
-- https://addons.mozilla.org/zh-CN/firefox/addon/quicker-connector/
+- https://getquicker.net/download/item/firefox_ext
 
 # 参考
 - [扩展开发官方文档](https://developer.chrome.com/extensions)
 
 # Change Logs
+## 0.6.0
+- 更改通信协议，支持多种浏览器，更加稳定的连接，支持右键菜单关联。
 
 ## 0.4.0
 - 重命名，去除Chrome字样，以避免Ms不给审核通过Edge插件。
