@@ -6,6 +6,9 @@
   display: inline-block;
   opacity: 0.25;
   z-index: 1000000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   /* The container <div> - needed to position the dropdown content */
   /* Dropdown Content (Hidden by Default) */
 }
@@ -17,8 +20,12 @@
   border: none;
   margin-bottom: 4px;
   border-radius: 50%;
-  line-height: 20px;
+  width: 34px;
+  height: 34px;
   box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 #_qk_menu .quicker_button svg {
   height: 20px;
@@ -26,8 +33,9 @@
 }
 #_qk_menu .dropdown-content {
   display: none;
-  position: absolute;
   background-color: transparent;
+  flex-direction: column;
+  align-items: flex-start;
 }
 #_qk_menu .dropdown-content button {
   color: black;
@@ -67,7 +75,7 @@
   opacity: 1;
 }
 #_qk_menu:hover .dropdown-content {
-  display: block;
+  display: flex;
 }
 #_qk_menu:hover .dropbtn {
   background-color: #3e8e41;
