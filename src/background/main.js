@@ -22,6 +22,8 @@ var _browser = getBrowserName();	// 浏览器名称
 // 网页关联动作列表
 var _actions = [];					// 动作列表，每个动作有独立的urlPattern
 var _actionGroups = []; 			// 动作组，每个组共享一个urlPattern
+var _menuIcon = null;				// 显示在网页中悬浮按钮的图标网址。如果没有此值，则显示默认的闪电图标。
+var _menuButtonBgColor = null; 		// 悬浮按钮的背景颜色
 
 var _isHostConnected = false;		// 是否连接到MessageHost
 var _isQuickerConnected = false;		// 是否连接到Quicker
@@ -257,6 +259,24 @@ function OnPortDisconnect(message) {
 	}
 
 
+	//
+	notifyClearActions();
+
+}
+
+/**
+ * 通知标签页，端口已经断开，去除显示的悬浮按钮
+ */
+function notifyClearActions(){
+	runScriptOnAllTabs(function (tab) {
+		chrome.tabs.sendMessage(tab.id,
+			{
+				cmd: 'clear_actions'			
+			},
+			function (response) {
+				console.log(response);
+			});
+	});
 }
 
 /**
@@ -457,6 +477,9 @@ function onMsgQuickerStateChange(msg) {
 				}
 			})
 		}
+	}else{
+		// quicker断开了，清除悬浮按钮
+		notifyClearActions();
 	}
 
 	updateConnectionState(true, msg.data.isConnected);
@@ -490,6 +513,11 @@ function onMessagePushActions(msg){
 	console.log('onMessagePushActions:', msg);
 	_actions = msg.data.actions;
 	_actionGroups = msg.data.groups;
+	_menuIcon = msg.data.menuIcon;
+	_menuButtonBgColor = msg.data.menuButtonBgColor;
+
+	//安装到所有标签页
+	setupActionsForAllTabs();
 }
 
 
@@ -1250,7 +1278,7 @@ chrome.runtime.onMessage.addListener(function (messageFromContentOrPopup, sender
 		case 'content_loaded':
 			{
 				// 网页
-				processTabContentLoaded(sender.tab);
+				setupActionsForTab(sender.tab);
 
 				// 返回
 				sendResponse();
@@ -1272,8 +1300,12 @@ chrome.runtime.onMessage.addListener(function (messageFromContentOrPopup, sender
  * @return 是否匹配
  */
 function isUrlMatch(url, pattern){
-	console.log('testing url ', url, ' with pattern:', pattern);
-	return new RegExp(pattern, 'g').test(url); 
+	
+	let isMatch =  new RegExp(pattern, 'g').test(url); 
+
+	console.log('testing url ', url, ' with pattern:', pattern, ' match:', isMatch);
+
+	return isMatch;
 }
 
 /**
@@ -1281,7 +1313,7 @@ function isUrlMatch(url, pattern){
  * 根据需要，添加动作按钮到网页
  * @param {object} tab 
  */
-function processTabContentLoaded(tab) {
+function setupActionsForTab(tab) {
 	var url = tab.url;
 
 	console.log('get valid actions, _actions:', _actions ,' actions groups:', _actionGroups, ' url:',url);
@@ -1310,7 +1342,9 @@ function processTabContentLoaded(tab) {
 		chrome.tabs.sendMessage(tab.id,
 			{
 				cmd: 'setup_actions',
-				actions: actionsForTab
+				actions: actionsForTab,
+				menuIcon: _menuIcon,
+				menuButtonBgColor: _menuButtonBgColor
 			},
 			function (response) {
 				console.log(response);
@@ -1319,6 +1353,11 @@ function processTabContentLoaded(tab) {
 	
 }
 
+function setupActionsForAllTabs(){
+	runScriptOnAllTabs(function(tab){
+		setupActionsForTab(tab);
+	});
+}
 
 
 //--------------------------------- 辅助 函数-------------------------------------------//

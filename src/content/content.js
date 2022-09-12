@@ -101,53 +101,163 @@ function notifyActionClick(actionId){
 		});
 }
 
+/**
+ * 拖动处理
+ * @param {*} dragElement 被拖动的对象
+ * @param {*} targetElement 移动的目标（父元素）
+ */
+function dragElement(dragElement, targetElement) {
+	let offsetX = 0,
+		offsetY = 0,
+		startX = 0,
+		startY = 0;
+	
+	dragElement.onmousedown = dragMouseDown;
+
+	function dragMouseDown(e) {
+		//console.log('拖动：mousedown');
+
+		e = e || window.event;
+		e.preventDefault();
+		startX = e.clientX;
+		startY = e.clientY;
+		document.onmouseup = closeDragElement;
+		document.onmousemove = elementDrag;
+	}
+
+	function elementDrag(e) {
+		e = e || window.event;
+		e.preventDefault();
+		offsetX = startX - e.clientX;
+		offsetY = startY - e.clientY;
+		startX = e.clientX;
+		startY = e.clientY;
+
+		targetElement.style.top = targetElement.offsetTop - offsetY + "px";
+		targetElement.style.left = targetElement.offsetLeft - offsetX + "px";
+		
+		// 保存
+		var viewPortWidth = window.innerWidth;
+		var viewPortHeight = window.innerHeight;
+
+		// 根据位置调整类，并更新到其它标签页
+		// processButtonLocationChange(targetElement, e.clientX, e.clientY, viewPortWidth, viewPortHeight);
+	}
+
+	function closeDragElement() {
+		document.onmouseup = null;
+		document.onmousemove = null;
+	}
+}
+
+
+/**
+ * 拖动改变位置后的处理
+ * @param {integer} left 拖动位置的左上角坐标
+ * @param {*} top 拖动位置的左上角坐标
+ * @param {*} viewWidth 窗口宽度
+ * @param {*} viewHeight 窗口高度
+ */
+function processButtonLocationChange(targetElement, left, top, viewWidth, viewHeight){
+	console.log('拖动完成。',  left, top, viewWidth, viewHeight);
+
+	if( left > viewWidth * 0.8){
+		console.log('adding class: right');
+		targetElement.classList.add('right');
+	}else{
+		console.log('removing class: right');
+		targetElement.classList.remove('right');
+	}
+	
+	if ((viewHeight - top) < 300){
+		console.log('adding class: bottom');
+		targetElement.classList.add('bottom');
+	}else{
+		console.log('removing class: bottom');
+		targetElement.classList.remove('bottom');
+	}
+}
+
+function updateClassAfterButtonLocationChange(left, top, viewWidth, viewHeight){
+
+}
+
+
+/**
+ * Quicker断开后，清除悬浮按钮
+ */
+function clearActions(){
+	var menu = document.getElementById('_qk_menu');
+	if(menu){
+		menu.remove();
+	}
+}
 
 /**
  * 显示动作按钮
  * @param {object[]} actions 
  */
-function setupActions(actions){
-	//console.log('setup actions:', actions);
+function setupActions(actions, menuIcon, menuButtonBgColor){
+	console.log('setup actions:', actions);
+	
 	var menu = document.getElementById('_qk_menu');
 	if (!menu){
 		menu = document.createElement("div");
 		menu.id = '_qk_menu';
 		document.body.append(menu);
+
+		// menu.classList.add('bottom');
+		// menu.classList.add('right');
+		
 	}else{
 		// clear list
 		while(menu.firstChild){
 			menu.removeChild(menu.firstChild);
 		}
 	}
+	
 
 	// quicker button
 	var quicker_button = document.createElement('div');
 	quicker_button.className = 'quicker_button';
+
+	if (menuButtonBgColor){
+		quicker_button.style.backgroundColor = menuButtonBgColor;	
+	}
+
+	dragElement(quicker_button, menu);
 	
-	quicker_button.onmousedown = function(event){
-		// stop button taken focus
-		event.preventDefault();
-	};
+	// quicker_button.onmousedown = function(event){
+	// 	// stop button taken focus
+	// 	event.preventDefault();
+	// };
+
+
 	menu.appendChild(quicker_button);
 
-	var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute('style', 'enable-background:new 0 0 32 32;');
-	svg.setAttribute('viewBox', '0 0 32 32');
-	svg.setAttribute('x', '0px');
-	svg.setAttribute('y', '0px');
-	// svg.setAttribute('width', '32px');
-	// svg.setAttribute('height', '32px');
-	svg.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", "http://www.w3.org/1999/xlink");
-   
-	var path1 = document.createElementNS("http://www.w3.org/2000/svg", 'path');
-	path1.setAttribute('d', 'M5.8,29.5l8.4-13c0.2-0.2,0.1-0.6-0.1-0.7l-8.2-5.6c-0.3-0.2-0.3-0.6,0-0.8l10.8-8.8v0l6,6.5 c0.2,0.3,0.2,0.7-0.1,0.8l-3.3,1.5c-0.4,0.2-0.4,0.7-0.1,0.9l7.8,5.3c0.3,0.2,0.3,0.7,0,0.9L6.5,30.2C6,30.5,5.5,30,5.8,29.5z  M4.5,31.5');
-	path1.setAttribute('fill', '#FFFFFF');
-
-	svg.appendChild(path1);
-
+	if (menuIcon){
+		var img = document.createElement('img');
+		img.src = menuIcon;
+		quicker_button.appendChild(img);
+	}else{
+		var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+		svg.setAttribute('style', 'enable-background:new 0 0 32 32;');
+		svg.setAttribute('viewBox', '0 0 32 32');
+		svg.setAttribute('x', '0px');
+		svg.setAttribute('y', '0px');
+		// svg.setAttribute('width', '32px');
+		// svg.setAttribute('height', '32px');
+		svg.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", "http://www.w3.org/1999/xlink");
+	   
+		var path1 = document.createElementNS("http://www.w3.org/2000/svg", 'path');
+		path1.setAttribute('d', 'M5.8,29.5l8.4-13c0.2-0.2,0.1-0.6-0.1-0.7l-8.2-5.6c-0.3-0.2-0.3-0.6,0-0.8l10.8-8.8v0l6,6.5 c0.2,0.3,0.2,0.7-0.1,0.8l-3.3,1.5c-0.4,0.2-0.4,0.7-0.1,0.9l7.8,5.3c0.3,0.2,0.3,0.7,0,0.9L6.5,30.2C6,30.5,5.5,30,5.8,29.5z  M4.5,31.5');
+		path1.setAttribute('fill', '#FFFFFF');
 	
-   
-	quicker_button.appendChild(svg);
+		svg.appendChild(path1);	
+	   
+		quicker_button.appendChild(svg);
+	}
+	
 
 
 	// drop down content
@@ -195,7 +305,6 @@ function setupActions(actions){
 		label.className = 'label';
 		label.innerText = action.title;
 		content_wrapper.append(label);
-
 		dropdown_content.append(button);
 	});
 }
@@ -204,9 +313,15 @@ function setupActions(actions){
 if (!inIframe()){
 
 	chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+		console.log('收到后台消息：', message);
+
 		switch(message.cmd){
 			case 'setup_actions':
-				setupActions(message.actions);
+				setupActions(message.actions, message.menuIcon, message.menuButtonBgColor);
+				sendResponse();
+				break;
+			case 'clear_actions':
+				clearActions();
 				sendResponse();
 				break;
 		}

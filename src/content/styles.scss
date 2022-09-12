@@ -1,8 +1,8 @@
 /* Dropdown Button */
 #_qk_menu {
     position: fixed;
-    left: 10px;
-    top: 150px;
+    left: 5px;
+    top: 30%;
     display: inline-block;
     opacity: 0.25;
     z-index: 1000000;
@@ -10,6 +10,22 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+
+    // 按钮在右侧的时候，菜单从左边展开
+    &.right{
+        align-items: flex-end;
+
+        .dropdown-content{
+            align-items: flex-end;
+        }
+    }
+    &.bottom{
+        flex-direction: column-reverse;
+
+        .dropdown-content{
+            flex-direction: flex-end;
+        }
+    }
 
     /* The container <div> - needed to position the dropdown content */
     .quicker_button {
@@ -19,6 +35,7 @@
         font-size: 16px;
         border: none;
         margin-bottom: 4px;
+        margin-top: 4px;
         border-radius: 50%;
         width: 34px;
         height: 34px;
@@ -28,7 +45,7 @@
         justify-content: center;
 
 
-        svg {
+        svg,img {
             height: 20px;
             width: 20px;
         }
@@ -45,7 +62,7 @@
 
         button {
             color: black;
-            padding: 10px 16px;
+            padding: 8px 16px;
             text-decoration: none;
             display: inline-block;
             margin: 3px 3px 3px 0px;
