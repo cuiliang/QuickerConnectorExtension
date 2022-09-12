@@ -1,0 +1,74 @@
+/* Dropdown Button */
+#_qk_menu {
+  position: fixed;
+  left: 10px;
+  top: 150px;
+  display: inline-block;
+  opacity: 0.25;
+  z-index: 1000000;
+  /* The container <div> - needed to position the dropdown content */
+  /* Dropdown Content (Hidden by Default) */
+}
+#_qk_menu .quicker_button {
+  background-color: #04AA6D;
+  color: white;
+  padding: 5px;
+  font-size: 16px;
+  border: none;
+  margin-bottom: 4px;
+  border-radius: 50%;
+  line-height: 20px;
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+}
+#_qk_menu .quicker_button svg {
+  height: 20px;
+  width: 20px;
+}
+#_qk_menu .dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: transparent;
+}
+#_qk_menu .dropdown-content button {
+  color: black;
+  padding: 10px 16px;
+  text-decoration: none;
+  display: inline-block;
+  margin: 3px 3px 3px 0px;
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+  background-color: #FFF;
+  border-radius: 5px;
+  border: none;
+}
+#_qk_menu .dropdown-content button .btn_content_wrapper {
+  display: flex;
+  justify-content: start;
+  align-items: center;
+}
+#_qk_menu .dropdown-content button .icon {
+  margin-right: 5px;
+}
+#_qk_menu .dropdown-content button .icon img {
+  width: 20px;
+  height: 20px;
+}
+#_qk_menu .dropdown-content button .icon svg {
+  width: 20px;
+  height: 20px;
+}
+#_qk_menu .dropdown-content button .label {
+  font-size: 14px;
+}
+#_qk_menu .dropdown-content button:hover {
+  background-color: #eee;
+}
+#_qk_menu:hover {
+  opacity: 1;
+}
+#_qk_menu:hover .dropdown-content {
+  display: block;
+}
+#_qk_menu:hover .dropbtn {
+  background-color: #3e8e41;
+}/*# sourceMappingURL=styles.css.map */

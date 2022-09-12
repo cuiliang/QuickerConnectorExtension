@@ -19,7 +19,9 @@ var _port = null;
 var _version = manifest.version;	// 扩展版本
 var _browser = getBrowserName();	// 浏览器名称
 
-
+// 网页关联动作列表
+var _actions = [];					// 动作列表，每个动作有独立的urlPattern
+var _actionGroups = []; 			// 动作组，每个组共享一个urlPattern
 
 var _isHostConnected = false;		// 是否连接到MessageHost
 var _isQuickerConnected = false;		// 是否连接到Quicker
@@ -34,6 +36,8 @@ const MSG_REPORT_ACTIVE_TAB_STATE = 5;	// 报告活动tab的最新网址
 const MSG_COMMAND_RESP = 3; 			// 命令响应消息
 const MSG_REGISTER_CONTEXT_MENU = 6; 	// 注册右键菜单
 const MSG_MENU_CLICK = 7;				// 菜单点击
+const MSG_PUSH_ACTIONS = 21;			// 向扩展推送动作列表
+const MSG_ACTION_CLICKED = 22;			// 动作点击了
 
 /* #endregion */
 
@@ -89,11 +93,34 @@ function setupReports() {
 		}
 	});
 
+	//  网址更新了
 	chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 		if (_isQuickerConnected
 			&& _enableReport) {
 			if (changeInfo.url) {
 				reportUrlChange(tabId, changeInfo.url);
+			}
+		}
+	});
+
+	// 切换窗口以后也更新一下网址
+	chrome.windows.onFocusChanged.addListener(function (windowId) {
+		if (windowId !== chrome.windows.WINDOW_ID_NONE) {
+			if (_isQuickerConnected
+				&& _enableReport) {
+				chrome.tabs.query(
+					{
+						windowId: windowId,
+						active: true
+					},
+					function (tabs) {
+						//console.log('active window changed:', windowId, tabs);
+						if (tabs.length > 0) {
+							reportUrlChange(tabs[0].id, tabs[0].url);
+						}
+
+					}
+				)
 			}
 		}
 	});
@@ -116,7 +143,7 @@ function loadSettings() {
  * @param {string} url 
  */
 function reportUrlChange(tabId, url) {
-	console.log('report url change:', tabId, url);
+	//console.log('report url change:', tabId, url);
 	sendReplyToQuicker(true, "", { tabId, url }, 0, MSG_REPORT_ACTIVE_TAB_STATE);
 }
 
@@ -233,7 +260,7 @@ function OnPortDisconnect(message) {
 }
 
 /**
- * 端口收到消息的处理
+ * 端口收到消息的处理（来自Quicker的消息）
  * @param {*} msg 
  * 消息格式：
  * 	 	serial: 消息序号，响应时在replyTo中返回，以便于pc端进行消息对应
@@ -311,6 +338,10 @@ function processQuickerCmd(msg) {
 		return;
 	} else if (msg.messageType === MSG_REGISTER_CONTEXT_MENU) {
 		onMessageRegisterContextMenu(msg);
+		return;
+	} else if (msg.messageType == MSG_PUSH_ACTIONS){
+		// 推送动作列表
+		onMessagePushActions(msg);	
 		return;
 	}
 
@@ -447,6 +478,20 @@ function onMessageRegisterContextMenu(msg) {
 		});
 	}
 }
+
+
+
+
+/**
+ * 处理推送动作消息
+ * @param {object} msg 推送动作的消息 
+ */
+function onMessagePushActions(msg){
+	console.log('onMessagePushActions:', msg);
+	_actions = msg.data.actions;
+	_actionGroups = msg.data.groups;
+}
+
 
 function menuItemClicked(info, tab) {
 	console.log('menu clicked:', info, tab);
@@ -674,10 +719,9 @@ function _runScriptOnTab(tabId, script, msg, allFrames) {
 
 	chrome.tabs.executeScript(tabId, details,
 		function (result) {
-			if (chrome.runtime.lastError 
-				&& chrome.runtime.lastError.message.includes("result is non-structured-clonable data") === false) 
-				{
-				console.warn('execute tab script error:', chrome.runtime.lastError)				
+			if (chrome.runtime.lastError
+				&& chrome.runtime.lastError.message.includes("result is non-structured-clonable data") === false) {
+				console.warn('execute tab script error:', chrome.runtime.lastError)
 				sendReplyToQuicker(false, chrome.runtime.lastError.message, result, msg.serial);
 			} else {
 				console.log('run script result:', result);
@@ -1147,7 +1191,7 @@ function updateUi() {
  * 监听popup窗口的消息
  */
 chrome.runtime.onMessage.addListener(function (messageFromContentOrPopup, sender, sendResponse) {
-	console.log('msg from popup/content:', messageFromContentOrPopup);
+	console.log('msg from popup/content:', messageFromContentOrPopup, ' sender:', sender);
 
 	switch (messageFromContentOrPopup.cmd) {
 		case 'update_ui':
@@ -1180,14 +1224,100 @@ chrome.runtime.onMessage.addListener(function (messageFromContentOrPopup, sender
 				sendResponse();
 			}
 			break;
+		case 'action_clicked':
+			{
+				
+
+				// 转发消息给Quicker
+				var msg = {
+					"messageType": 22, //ActionButtonClick
+					"isSuccess": true,
+					"replyTo": 0,
+					"message": '',
+					"version": _version,
+					"browser": _browser,
+					"data" : messageFromContentOrPopup.data
+				};
+
+				console.log('action_clicked, sending to quicker, sending:', msg);
+
+				_port.postMessage(msg);
+
+				// 返回
+				sendResponse();
+			}
+			break;
+		case 'content_loaded':
+			{
+				// 网页
+				processTabContentLoaded(sender.tab);
+
+				// 返回
+				sendResponse();
+			}
+			break;
 		default:
 			console.log('unknown message from popup or content:', messageFromContentOrPopup);
+			// 返回
+			sendResponse();
 	}
 
 })
 
 
+/**
+ * 网址是否匹配某个模式
+ * @param {string} url 网址
+ * @param {string} pattern 网址模式
+ * @return 是否匹配
+ */
+function isUrlMatch(url, pattern){
+	console.log('testing url ', url, ' with pattern:', pattern);
+	return new RegExp(pattern, 'g').test(url); 
+}
 
+/**
+ * 当某个tab加载完成，content脚本加载完成后，
+ * 根据需要，添加动作按钮到网页
+ * @param {object} tab 
+ */
+function processTabContentLoaded(tab) {
+	var url = tab.url;
+
+	console.log('get valid actions, _actions:', _actions ,' actions groups:', _actionGroups, ' url:',url);
+
+	let actionsForTab = [];
+
+	if (_actions){
+		_actions.forEach(action => {
+			if (isUrlMatch(url, action.urlPattern)){
+				actionsForTab.push(action);
+			}
+		});
+	}
+
+	if (_actionGroups){
+		_actionGroups.forEach(group => {
+			if (group.actions && isUrlMatch(url, group.urlPattern)){
+				group.actions.forEach(action => {
+					actionsForTab.push(action);
+				});
+			}
+		});
+	}
+
+	if (actionsForTab.length > 0){
+		chrome.tabs.sendMessage(tab.id,
+			{
+				cmd: 'setup_actions',
+				actions: actionsForTab
+			},
+			function (response) {
+				console.log(response);
+			});
+	}
+	
+}
 
 
 

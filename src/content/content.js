@@ -16,21 +16,18 @@
  * @param {*} STR_XPATH XPath
  */
 function _x(STR_XPATH) {
-    var xresult = document.evaluate(STR_XPATH, document, null, XPathResult.ANY_TYPE, null);
-    var xnodes = [];
-    var xres;
-    while (xres = xresult.iterateNext()) {
-        xnodes.push(xres);
-    }
+	var xresult = document.evaluate(STR_XPATH, document, null, XPathResult.ANY_TYPE, null);
+	var xnodes = [];
+	var xres;
+	while (xres = xresult.iterateNext()) {
+		xnodes.push(xres);
+	}
 
-    return xnodes;
+	return xnodes;
 }
 
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('msg recved:', message);
-    return true;
-});
+
 
 
 /**
@@ -38,13 +35,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
  * @param {*}} msg 
  */
 function sendToQuicker(msg) {
-    chrome.runtime.sendMessage(
-        {
-            cmd: 'send_to_quicker',
-            data: msg
-        }, (respones) => {
+	chrome.runtime.sendMessage(
+		{
+			cmd: 'send_to_quicker',
+			data: msg
+		}, (respones) => {
 
-        });
+		});
 }
 
 /**
@@ -79,4 +76,149 @@ function sendReplyToQuicker(isSuccess, message, data, replyTo) {
 
 	// 发送结果
 	sendToQuicker(msg);
+}
+
+function inIframe () {
+    try {
+        return window.self !== window.top;
+    } catch (e) {
+        return true;
+    }
+}
+
+
+/**
+ * 通知按钮点击
+ * @param {string} actionId 
+ */
+function notifyActionClick(actionId){
+	chrome.runtime.sendMessage(
+		{
+			cmd: 'action_clicked',
+			data: {
+				actionId: actionId
+			}
+		});
+}
+
+
+/**
+ * 显示动作按钮
+ * @param {object[]} actions 
+ */
+function setupActions(actions){
+	//console.log('setup actions:', actions);
+	var menu = document.getElementById('_qk_menu');
+	if (!menu){
+		menu = document.createElement("div");
+		menu.id = '_qk_menu';
+		document.body.append(menu);
+	}else{
+		// clear list
+		while(menu.firstChild){
+			menu.removeChild(menu.firstChild);
+		}
+	}
+
+	// quicker button
+	var quicker_button = document.createElement('div');
+	quicker_button.className = 'quicker_button';
+	
+	quicker_button.onmousedown = function(event){
+		// stop button taken focus
+		event.preventDefault();
+	};
+	menu.appendChild(quicker_button);
+
+	var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute('style', 'enable-background:new 0 0 32 32;');
+	svg.setAttribute('viewBox', '0 0 32 32');
+	svg.setAttribute('x', '0px');
+	svg.setAttribute('y', '0px');
+	// svg.setAttribute('width', '32px');
+	// svg.setAttribute('height', '32px');
+	svg.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", "http://www.w3.org/1999/xlink");
+   
+	var path1 = document.createElementNS("http://www.w3.org/2000/svg", 'path');
+	path1.setAttribute('d', 'M5.8,29.5l8.4-13c0.2-0.2,0.1-0.6-0.1-0.7l-8.2-5.6c-0.3-0.2-0.3-0.6,0-0.8l10.8-8.8v0l6,6.5 c0.2,0.3,0.2,0.7-0.1,0.8l-3.3,1.5c-0.4,0.2-0.4,0.7-0.1,0.9l7.8,5.3c0.3,0.2,0.3,0.7,0,0.9L6.5,30.2C6,30.5,5.5,30,5.8,29.5z  M4.5,31.5');
+	path1.setAttribute('fill', '#FFFFFF');
+
+	svg.appendChild(path1);
+
+	
+   
+	quicker_button.appendChild(svg);
+
+
+	// drop down content
+	var dropdown_content = document.createElement('div');
+	dropdown_content.className = 'dropdown-content';
+	menu.appendChild(dropdown_content);
+
+
+	// 为动作添加按钮
+	actions.forEach(function(action){
+		var button = document.createElement("button");
+		button.className = 'qk_action_button';
+		button.title = action.description;
+		button.addEventListener('click', function(){
+			// alert('action clicked:' + action.id);
+			notifyActionClick(action.id);
+		
+		});
+
+		// 防止影响焦点
+		button.onmousedown = function(event){
+			event.preventDefault();
+		};
+
+		var content_wrapper = document.createElement('div');
+		content_wrapper.className = 'btn_content_wrapper';
+		button.appendChild(content_wrapper);
+
+		// icon
+		if(action.icon && action.icon.startsWith('http'))
+		{
+			var icon = document.createElement('div');
+			icon.className = 'icon';
+			content_wrapper.append(icon);
+	
+			var img = document.createElement('img');
+			img.src = action.icon;
+			img.className = 'icon_img';
+			icon.append(img);
+			
+		}
+		
+		// label
+		var label = document.createElement('div');
+		label.className = 'label';
+		label.innerText = action.title;
+		content_wrapper.append(label);
+
+		dropdown_content.append(button);
+	});
+}
+
+
+if (!inIframe()){
+
+	chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+		switch(message.cmd){
+			case 'setup_actions':
+				setupActions(message.actions);
+				sendResponse();
+				break;
+		}
+		return true;
+	});
+
+	/**
+	 * 通知后台页面，Content脚本加载完成
+	 */
+	chrome.runtime.sendMessage(
+		{
+			cmd: 'content_loaded',
+			data: null
+		}, response => {});
 }
