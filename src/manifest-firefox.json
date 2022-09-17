@@ -13,6 +13,9 @@
       "id": "addon@getquicker.net"
     }
   },
+  "web_accessible_resources": [
+    "./content/styles.css"
+  ],
   "content_scripts": [
     {
       "matches": [
@@ -21,6 +24,9 @@
       "js": [
         "./libs/jquery-3.6.0.min.js",
         "./content/content.js"
+      ],
+      "css":[
+        "./content/styles.css"
       ],
       "all_frames": true
     }

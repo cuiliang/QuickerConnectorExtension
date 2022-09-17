@@ -1347,7 +1347,14 @@ function setupActionsForTab(tab) {
 				menuButtonBgColor: _menuButtonBgColor
 			},
 			function (response) {
-				console.log(response);
+			});
+	}else{
+		// 如果之前显示了动作，则通知其清除
+		chrome.tabs.sendMessage(tab.id,
+			{
+				cmd: 'clear_actions'
+			},
+			function (response) {
 			});
 	}
 	
