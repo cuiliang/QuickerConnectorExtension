@@ -1308,6 +1308,18 @@ function isUrlMatch(url, pattern){
 	return isMatch;
 }
 
+
+/**
+ * 按属性排序
+ * @param {string} p 
+ * @returns 
+ */
+Array.prototype.sortBy = function(p) {
+	return this.slice(0).sort(function(a,b) {
+	  return (a[p] > b[p]) ? 1 : (a[p] < b[p]) ? -1 : 0;
+	});
+  }
+
 /**
  * 当某个tab加载完成，content脚本加载完成后，
  * 根据需要，添加动作按钮到网页
@@ -1339,6 +1351,10 @@ function setupActionsForTab(tab) {
 	}
 
 	if (actionsForTab.length > 0){
+
+		//sort
+		actionsForTab = actionsForTab.sortBy('title');
+
 		chrome.tabs.sendMessage(tab.id,
 			{
 				cmd: 'setup_actions',
