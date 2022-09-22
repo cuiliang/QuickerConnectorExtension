@@ -22,7 +22,7 @@
   flex-direction: column-reverse;
 }
 #_qk_menu.bottom .dropdown-content {
-  flex-direction: flex-end;
+  flex-direction: column-reverse;
 }
 #_qk_menu .quicker_button {
   background-color: #04AA6D;
@@ -33,12 +33,13 @@
   margin-bottom: 4px;
   margin-top: 4px;
   border-radius: 50%;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
 }
 #_qk_menu .quicker_button svg, #_qk_menu .quicker_button img {
   height: 20px;
@@ -52,7 +53,7 @@
 }
 #_qk_menu .dropdown-content button {
   color: black;
-  padding: 8px 16px;
+  padding: 6px 12px;
   text-decoration: none;
   display: inline-block;
   margin: 3px 3px 3px 0px;
@@ -66,20 +67,24 @@
   display: flex;
   justify-content: start;
   align-items: center;
+  line-height: 1;
 }
-#_qk_menu .dropdown-content button .icon {
+#_qk_menu .dropdown-content button .qk_action_icon {
   margin-right: 5px;
+  padding: 0px;
+  line-height: 1;
 }
-#_qk_menu .dropdown-content button .icon img {
+#_qk_menu .dropdown-content button .qk_action_icon img {
   width: 20px;
   height: 20px;
 }
-#_qk_menu .dropdown-content button .icon svg {
+#_qk_menu .dropdown-content button .qk_action_icon svg {
   width: 20px;
   height: 20px;
 }
-#_qk_menu .dropdown-content button .label {
+#_qk_menu .dropdown-content button .qk_action_label {
   font-size: 14px;
+  line-height: 1;
 }
 #_qk_menu .dropdown-content button:hover {
   background-color: #eee;
@@ -92,4 +97,7 @@
 }
 #_qk_menu:hover .dropbtn {
   background-color: #3e8e41;
+}
+#_qk_menu.dragging:hover .dropdown-content {
+  display: none;
 }/*# sourceMappingURL=styles.css.map */

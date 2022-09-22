@@ -10,6 +10,8 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    
+   
 
     // 按钮在右侧的时候，菜单从左边展开
     &.right{
@@ -23,9 +25,9 @@
         flex-direction: column-reverse;
 
         .dropdown-content{
-            flex-direction: flex-end;
+            flex-direction: column-reverse;
         }
-    }
+    } 
 
     /* The container <div> - needed to position the dropdown content */
     .quicker_button {
@@ -37,13 +39,13 @@
         margin-bottom: 4px;
         margin-top: 4px;
         border-radius: 50%;
-        width: 34px;
-        height: 34px;
+        width: 32px;
+        height: 32px;
         box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
         display: flex;
         align-items: center;
         justify-content: center;
-
+        box-sizing: border-box;
 
         svg,img {
             height: 20px;
@@ -62,7 +64,7 @@
 
         button {
             color: black;
-            padding: 8px 16px;
+            padding: 6px 12px;
             text-decoration: none;
             display: inline-block;
             margin: 3px 3px 3px 0px;
@@ -77,11 +79,14 @@
             .btn_content_wrapper {
                 display: flex;
                 justify-content: start;
-                align-items: center;
+                align-items: center;          
+                line-height: 1;     
             }
 
-            .icon {
+            .qk_action_icon {
                 margin-right: 5px;
+                padding:0px;
+                line-height: 1;     
 
                 img {
                     width: 20px;
@@ -94,9 +99,11 @@
                 }
             }
 
-            .label {
-                font-size: 14px;
+            .qk_action_label {
+                font-size: 14px;    
+                line-height: 1;                 
             }
+
 
             &:hover {
                 background-color: #eee;
@@ -113,6 +120,11 @@
 
         .dropbtn {
             background-color: #3e8e41;
+        }
+    }
+    &.dragging:hover{
+        .dropdown-content {
+            display: none;
         }
     }
 }

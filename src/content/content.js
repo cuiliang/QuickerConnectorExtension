@@ -111,18 +111,36 @@ function dragElement(dragElement, targetElement) {
 		offsetY = 0,
 		startX = 0,
 		startY = 0;
+
+
+	// 悬浮按钮的其实位置
+	let dragEleStartRect = null;
+	// 鼠标开始拖动的起始位置
+	//let originX = 0, originY = 0; 
 	
 	dragElement.onmousedown = dragMouseDown;
 
 	function dragMouseDown(e) {
-		//console.log('拖动：mousedown');
+		targetElement.classList.add('dragging');
+		targetElement.classList.remove('right');
+
+		dragEleStartRect = dragElement.getBoundingClientRect();
+
+		console.log('拖动：mousedown', targetElement.offsetWidth, dragElement.offsetWidth);
+		
 
 		e = e || window.event;
 		e.preventDefault();
 		startX = e.clientX;
 		startY = e.clientY;
+
+		// originX = e.clientX;
+		// originY = e.clientY;
+
 		document.onmouseup = closeDragElement;
 		document.onmousemove = elementDrag;
+
+		
 	}
 
 	function elementDrag(e) {
@@ -130,23 +148,35 @@ function dragElement(dragElement, targetElement) {
 		e.preventDefault();
 		offsetX = startX - e.clientX;
 		offsetY = startY - e.clientY;
-		startX = e.clientX;
-		startY = e.clientY;
 
-		targetElement.style.top = targetElement.offsetTop - offsetY + "px";
-		targetElement.style.left = targetElement.offsetLeft - offsetX + "px";
+		console.log('drag:', offsetX, offsetY);
+
+		// startX = e.clientX;
+		// startY = e.clientY;
+
+		var rect = dragElement.getBoundingClientRect();
+
+		targetElement.style.bottom = null;
+		targetElement.style.right = null;
+		targetElement.style.top = dragEleStartRect.top - offsetY + "px";
+		targetElement.style.left = dragEleStartRect.left - offsetX + "px";
 		
-		// 保存
-		var viewPortWidth = window.innerWidth;
-		var viewPortHeight = window.innerHeight;
-
-		// 根据位置调整类，并更新到其它标签页
-		// processButtonLocationChange(targetElement, e.clientX, e.clientY, viewPortWidth, viewPortHeight);
+		
 	}
 
 	function closeDragElement() {
+		
 		document.onmouseup = null;
 		document.onmousemove = null;
+
+		// 保存
+		var viewPortWidth = window.client;
+		var viewPortHeight = window.innerHeight;
+
+		// 根据位置调整类，并更新到其它标签页
+		processButtonLocationChange(dragElement, targetElement, viewPortWidth, viewPortHeight);
+
+		targetElement.classList.remove('dragging');
 	}
 }
 
@@ -158,12 +188,26 @@ function dragElement(dragElement, targetElement) {
  * @param {*} viewWidth 窗口宽度
  * @param {*} viewHeight 窗口高度
  */
-function processButtonLocationChange(targetElement, left, top, viewWidth, viewHeight){
-	console.log('拖动完成。',  left, top, viewWidth, viewHeight);
+function processButtonLocationChange(dragElement, targetElement,  viewWidth, viewHeight){
+
+	var viewWidth =  document.body.clientWidth;
+
+	let currRect = dragElement.getBoundingClientRect();
+
+	console.log('drag bounding:', dragElement.getBoundingClientRect(), ' target:', targetElement.getBoundingClientRect(), ' view width:', viewWidth);
+	
+
+	let top = currRect.top;
+	let left = currRect.left;
 
 	if( left > viewWidth * 0.8){
 		console.log('adding class: right');
 		targetElement.classList.add('right');
+		targetElement.style.left = 'auto';
+		let right = (viewWidth - currRect.right) + 'px';
+		targetElement.style.right = right;
+		console.log('set right:' + right);
+		
 	}else{
 		console.log('removing class: right');
 		targetElement.classList.remove('right');
@@ -172,6 +216,10 @@ function processButtonLocationChange(targetElement, left, top, viewWidth, viewHe
 	if ((viewHeight - top) < 300){
 		console.log('adding class: bottom');
 		targetElement.classList.add('bottom');
+
+		targetElement.style.top = 'auto';
+		let bottom = (viewHeight - currRect.bottom - 4) + 'px';
+		targetElement.style.bottom = bottom;
 	}else{
 		console.log('removing class: bottom');
 		targetElement.classList.remove('bottom');
@@ -290,7 +338,7 @@ function setupActions(actions, menuIcon, menuButtonBgColor){
 		if(action.icon && action.icon.startsWith('http'))
 		{
 			var icon = document.createElement('div');
-			icon.className = 'icon';
+			icon.className = 'qk_action_icon';
 			content_wrapper.append(icon);
 	
 			var img = document.createElement('img');
@@ -302,7 +350,7 @@ function setupActions(actions, menuIcon, menuButtonBgColor){
 		
 		// label
 		var label = document.createElement('div');
-		label.className = 'label';
+		label.className = 'qk_action_label';
 		label.innerText = action.title;
 		content_wrapper.append(label);
 		dropdown_content.append(button);
