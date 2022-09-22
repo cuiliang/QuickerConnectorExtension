@@ -169,12 +169,10 @@ function dragElement(dragElement, targetElement) {
 		document.onmouseup = null;
 		document.onmousemove = null;
 
-		// 保存
-		var viewPortWidth = window.client;
-		var viewPortHeight = window.innerHeight;
+		
 
 		// 根据位置调整类，并更新到其它标签页
-		processButtonLocationChange(dragElement, targetElement, viewPortWidth, viewPortHeight);
+		processButtonLocationChange(dragElement, targetElement);
 
 		targetElement.classList.remove('dragging');
 	}
@@ -185,26 +183,33 @@ function dragElement(dragElement, targetElement) {
  * 拖动改变位置后的处理
  * @param {integer} left 拖动位置的左上角坐标
  * @param {*} top 拖动位置的左上角坐标
- * @param {*} viewWidth 窗口宽度
- * @param {*} viewHeight 窗口高度
  */
-function processButtonLocationChange(dragElement, targetElement,  viewWidth, viewHeight){
+function processButtonLocationChange(dragElement, targetElement){
 
-	var viewWidth =  document.body.clientWidth;
+	
+	var viewportHeight;
+	var viewportWidth;
+	if (document.compatMode === 'BackCompat') {
+		viewportHeight = document.body.clientHeight;
+		viewportWidth = document.body.clientWidth;
+	} else {
+		viewportHeight = document.documentElement.clientHeight;
+		viewportWidth = document.documentElement.clientWidth;
+	}
 
 	let currRect = dragElement.getBoundingClientRect();
 
-	console.log('drag bounding:', dragElement.getBoundingClientRect(), ' target:', targetElement.getBoundingClientRect(), ' view width:', viewWidth);
+	console.log('drag bounding:', dragElement.getBoundingClientRect(), ' target:', targetElement.getBoundingClientRect(), ' view width:', viewportWidth);
 	
 
 	let top = currRect.top;
 	let left = currRect.left;
 
-	if( left > viewWidth * 0.8){
+	if( left > viewportWidth * 0.8){
 		console.log('adding class: right');
 		targetElement.classList.add('right');
 		targetElement.style.left = 'auto';
-		let right = (viewWidth - currRect.right) + 'px';
+		let right = (viewportWidth - currRect.right) + 'px';
 		targetElement.style.right = right;
 		console.log('set right:' + right);
 		
@@ -213,20 +218,100 @@ function processButtonLocationChange(dragElement, targetElement,  viewWidth, vie
 		targetElement.classList.remove('right');
 	}
 	
-	if ((viewHeight - top) < 300){
+	if ((viewportHeight - top) < 300){
 		console.log('adding class: bottom');
 		targetElement.classList.add('bottom');
 
 		targetElement.style.top = 'auto';
-		let bottom = (viewHeight - currRect.bottom - 4) + 'px';
+		let bottom = (viewportHeight - currRect.bottom - 4) + 'px';
 		targetElement.style.bottom = bottom;
 	}else{
 		console.log('removing class: bottom');
 		targetElement.classList.remove('bottom');
 	}
+
+	notifyButtonPositionChange(targetElement);
 }
 
-function updateClassAfterButtonLocationChange(left, top, viewWidth, viewHeight){
+
+/**
+ * 通知扩展，更新其它标签页中按钮的位置（并保存）
+ * @param {*} element _qk_menu 元素
+ */
+function notifyButtonPositionChange(element){
+	
+	var viewportHeight;
+	var viewportWidth;
+	if (document.compatMode === 'BackCompat') {
+		viewportHeight = document.body.clientHeight;
+		viewportWidth = document.body.clientWidth;
+	} else {
+		viewportHeight = document.documentElement.clientHeight;
+		viewportWidth = document.documentElement.clientWidth;
+	}
+
+	// 根据所处位置，计算left、top的值。 如果在边界附近，生成px值，如果在中间，则生成百分比值。
+	var rect = element.getBoundingClientRect();
+	let left = '';
+	let right = '';
+	let top = '';
+	let bottom = '';
+
+	if (element.classList.contains('right')){
+		right = element.style.right;
+	}else{
+		if (rect.left < 200){
+			left = rect.left + 'px';
+		}else {
+			// 中间位置，按比例
+			left = (rect.left / viewportWidth * 100.0) + '%';
+		}
+	}
+	if (element.classList.contains('bottom')){
+		bottom = element.style.bottom;
+	}else{
+		if (rect.top < 200){
+			top = rect.top + 'px';
+		}else{
+			top = (rect.top / viewportHeight * 100.0) + '%'
+		}
+	}
+	
+
+	chrome.runtime.sendMessage(
+		{
+			cmd: 'button_pos_changed',
+			data: {
+				'classList' : [...element.classList].filter(x => x !== 'dragging'),
+				'left'	:left,
+				'right':right,
+				'top': top,
+				'bottom': bottom
+			}
+		});
+}
+
+/**
+ * 处理更新按钮位置消息
+ * @param {*} message 从扩展收到的更新按钮位置消息
+ */
+function updateBtnPosition(position){
+	console.log('update position :', position);
+
+	var menu = document.getElementById('_qk_menu');
+	if(menu){
+		menu.classList.remove(...menu.classList);
+
+		position.classList.forEach(cls => {
+			menu.classList.add(cls);
+		});
+		
+
+		menu.style.left = position.left || 'auto';
+		menu.style.right = position.right || 'auto';
+		menu.style.top = position.top || 'auto';
+		menu.style.bottom = position.bottom || 'auto';
+	}
 
 }
 
@@ -245,7 +330,7 @@ function clearActions(){
  * 显示动作按钮
  * @param {object[]} actions 
  */
-function setupActions(actions, menuIcon, menuButtonBgColor){
+function setupActions(actions, menuIcon, menuButtonBgColor, buttonPosition){
 	console.log('setup actions:', actions);
 	
 	var menu = document.getElementById('_qk_menu');
@@ -355,6 +440,9 @@ function setupActions(actions, menuIcon, menuButtonBgColor){
 		content_wrapper.append(label);
 		dropdown_content.append(button);
 	});
+
+	// 设置按钮位置
+	updateBtnPosition(buttonPosition);
 }
 
 
@@ -365,11 +453,15 @@ if (!inIframe()){
 
 		switch(message.cmd){
 			case 'setup_actions':
-				setupActions(message.actions, message.menuIcon, message.menuButtonBgColor);
+				setupActions(message.actions, message.menuIcon, message.menuButtonBgColor, message.position);
 				sendResponse();
 				break;
 			case 'clear_actions':
 				clearActions();
+				sendResponse();
+				break;
+			case 'update_btn_position':	// 更新按钮位置
+				updateBtnPosition(message.data);
 				sendResponse();
 				break;
 		}
