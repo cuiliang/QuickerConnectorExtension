@@ -98,7 +98,7 @@ function setupReports() {
 
 		if (_isQuickerConnected && _enableReport) {
 			var tab = chrome.tabs.get(activeInfo.tabId, function (currTab) {
-				reportUrlChange(activeInfo.tabId, currTab.url);
+				reportUrlChange(activeInfo.tabId, currTab.url, true, 1);
 			})
 		}
 	});
@@ -108,7 +108,7 @@ function setupReports() {
 		if (_isQuickerConnected
 			&& _enableReport) {
 			if (changeInfo.url) {
-				reportUrlChange(tabId, changeInfo.url);
+				reportUrlChange(tabId, changeInfo.url, tab.active, 2);
 			}
 		}
 	});
@@ -126,7 +126,7 @@ function setupReports() {
 					function (tabs) {
 						//console.log('active window changed:', windowId, tabs);
 						if (tabs.length > 0) {
-							reportUrlChange(tabs[0].id, tabs[0].url);
+							reportUrlChange(tabs[0].id, tabs[0].url, tabs[0].active, 3);
 						}
 
 					}
@@ -157,12 +157,14 @@ function loadSettings() {
 
 /**
  * 发送最新的网址以方便切换场景
- * @param {int} tabId 
- * @param {string} url 
+ * @param {int} tabId 更新的标签页ID
+ * @param {string} url 更新的网址
+ * @param {isActive} isActive 标签页是否为活动标签页
+ * @param {eventType} eventType 事件类型：1. 标签页激活。 2. 网址变更。 3. 窗口激活。
  */
-function reportUrlChange(tabId, url) {
-	//console.log('report url change:', tabId, url);
-	sendReplyToQuicker(true, "", { tabId, url }, 0, MSG_REPORT_ACTIVE_TAB_STATE);
+function reportUrlChange(tabId, url, isActive, eventType) {
+	//
+	sendReplyToQuicker(true, "", { tabId, url, isActive, eventType }, 0, MSG_REPORT_ACTIVE_TAB_STATE);
 }
 
 /* #endregion */
@@ -489,7 +491,7 @@ function onMsgQuickerStateChange(msg) {
 		if (_enableReport) {
 			chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
 				if (tabs.length > 0) {
-					reportUrlChange(tabs[0].tabId, tabs[0].url);
+					reportUrlChange(tabs[0].tabId, tabs[0].url, tabs[0].active, 1);
 				}
 			})
 		}

@@ -1,7 +1,7 @@
 {
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsY/cYwcZKwiMqyS0MgNQUsG25ymyfPZspKD6Ez8eisqY9Tfx98W3gzzT6nrMXc+ZQ9cf9sY3EpvZdL080VZNyPqkor6QheUMadLliVtupFKNYtkVseOV4xQK5CcgN3djQKX2MMBZCGPBRIwLYxRaNCWmakVsJog6xNf3Y7/2GzdJS3MtDrazs5Lv1YK2y0Ox0rI4GuUrslGQDiMX+k6f82iYWq58iyC/KGC1aPq4tBPvRtEeqp21m3sEfjyjSc2gKPPpKhtlfggjvQhAGI4jO7CJkeCmVXzZwGIGTK8G26vVX9YJ3HT6PkPXP0u5TNu0HERspRAJCGB/FuKDcUjk/QIDAQAB",
   "name": "Quicker Connector",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "manifest_version": 2,
   "description": "Native message connector with Quicker application",
   "background": {
