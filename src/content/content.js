@@ -11,6 +11,15 @@
 //     }
 // });
 
+// LOGGING based on if in dev mode
+const IS_DEV_MODE = !('update_url' in chrome.runtime.getManifest());
+function _log(...args){
+	if (IS_DEV_MODE){
+		console.log(...args);
+	}	
+}
+
+
 /**
  * 增加xpath解析支持
  * @param {*} STR_XPATH XPath
@@ -53,7 +62,7 @@ function sendToQuicker(msg) {
  */
 function sendReplyToQuicker(isSuccess, message, data, replyTo) {
 
-	//;console.log('sending message,isSuccess:', isSuccess, 'replyTo:', replyTo, 'message:', message, 'data:', data)
+	_log('sending message,isSuccess:', isSuccess, 'replyTo:', replyTo, 'message:', message, 'data:', data)
 
 	// 如果返回的结果是简单类型，将其封装在对象中
 	if (data) {
@@ -72,7 +81,7 @@ function sendReplyToQuicker(isSuccess, message, data, replyTo) {
 		"message": message,
 		"data": data
 	};
-	console.log('sending message to quicker:', msg);
+	_log('sending message to quicker:', msg);
 
 	// 发送结果
 	sendToQuicker(msg);
@@ -126,7 +135,7 @@ function dragElement(dragElement, targetElement) {
 
 		dragEleStartRect = dragElement.getBoundingClientRect();
 
-		console.log('拖动：mousedown', targetElement.offsetWidth, dragElement.offsetWidth);
+		_log('拖动：mousedown', targetElement.offsetWidth, dragElement.offsetWidth);
 		
 
 		e = e || window.event;
@@ -149,7 +158,7 @@ function dragElement(dragElement, targetElement) {
 		offsetX = startX - e.clientX;
 		offsetY = startY - e.clientY;
 
-		console.log('drag:', offsetX, offsetY);
+		_log('drag:', offsetX, offsetY);
 
 		// startX = e.clientX;
 		// startY = e.clientY;
@@ -206,27 +215,27 @@ function processButtonLocationChange(dragElement, targetElement){
 	let left = currRect.left;
 
 	if( left > viewportWidth * 0.8){
-		console.log('adding class: right');
+		_log('adding class: right');
 		targetElement.classList.add('right');
 		targetElement.style.left = 'auto';
 		let right = (viewportWidth - currRect.right) + 'px';
 		targetElement.style.right = right;
-		console.log('set right:' + right);
+		_log('set right:' + right);
 		
 	}else{
-		console.log('removing class: right');
+		_log('removing class: right');
 		targetElement.classList.remove('right');
 	}
 	
 	if ((viewportHeight - top) < 300){
-		console.log('adding class: bottom');
+		_log('adding class: bottom');
 		targetElement.classList.add('bottom');
 
 		targetElement.style.top = 'auto';
 		let bottom = (viewportHeight - currRect.bottom - 4) + 'px';
 		targetElement.style.bottom = bottom;
 	}else{
-		console.log('removing class: bottom');
+		_log('removing class: bottom');
 		targetElement.classList.remove('bottom');
 	}
 
@@ -296,7 +305,7 @@ function notifyButtonPositionChange(element){
  * @param {*} message 从扩展收到的更新按钮位置消息
  */
 function updateBtnPosition(position){
-	console.log('update position :', position);
+	_log('update position :', position);
 
 	var menu = document.getElementById('_qk_menu');
 	if(menu){
@@ -331,7 +340,7 @@ function clearActions(){
  * @param {object[]} actions 
  */
 function setupActions(actions, menuIcon, menuButtonBgColor, buttonPosition){
-	console.log('setup actions:', actions);
+	_log('setup actions:', actions);
 	
 	var menu = document.getElementById('_qk_menu');
 	if (!menu){
@@ -449,7 +458,7 @@ function setupActions(actions, menuIcon, menuButtonBgColor, buttonPosition){
 if (!inIframe()){
 
 	chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-		console.log('收到后台消息：', message);
+		_log('收到后台消息：', message);
 
 		switch(message.cmd){
 			case 'setup_actions':
