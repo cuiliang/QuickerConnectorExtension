@@ -49,10 +49,11 @@
         </table>
     </section>
     <hr>
-    <section>       
+    <section>
         <div style='margin: 0 0 0 20px;'>
-            <label  class='hint--bottom' style='display:inline-block;' aria-label='实时更新当前网址到Quicker。'>
-                <input style='vertical-align: middle; margin-right: 4px; margin-top: 6px;' type="checkbox" id='chkEnableReport'>
+            <label class='hint--bottom' style='display:inline-block;' aria-label='实时更新当前网址到Quicker。'>
+                <input style='vertical-align: middle; margin-right: 4px; margin-top: 6px;' type="checkbox"
+                    id='chkEnableReport'>
                 <span style='vertical-align: middle; margin-top: 0;'>开启网址同步</span>
             </label>
         </div>
@@ -62,32 +63,43 @@
         <h4 style="margin: 0px 0 5px 0;">
             可选权限：
             <span style='display: inline-block;margin:0 20px;'>
-                <button id='btn-allow-all' class='hint--bottom'  aria-label='允许所有可选权限'><span style="color:green">✔</span> 允许全部</button>
-                <button id='btn-remove-all' class='hint--bottom'  aria-label='禁止所有可选权限'><span title="已禁止" style="color:red;">🛇</span> 禁用全部</button>
+                <button id='btn-allow-all' class='hint--bottom' aria-label='允许所有可选权限'><span style="color:green">✔</span>
+                    允许全部</button>
+                <button id='btn-remove-all' class='hint--bottom' aria-label='禁止所有可选权限'><span title="已禁止"
+                        style="color:red;">🛇</span> 禁用全部</button>
             </span>
         </h4>
         <div id='pnlPermissions' style="display: flex; flex-direction:column;">
         </div>
     </section>
 
-    
+
     <hr>
     <div class='footer'>
         <span style='font-size: 0.9em; color:#666'>
+
             <span>QuickerConnector</span>
             <span id='extVersion'></span>
+
         </span>
         <span>
-            <button id='btn-reset-floater' class='hint--top'  aria-label='重置浮标位置' title="重置浮标位置"><span style="color:rgb(129, 129, 129);">↶</span></button>
+            <button id='btn-picker' class='hint--top' aria-label='获取元素选择器' title="获取元素选择器">
+                <img src="crosshairs-regular.svg" width="14" height="14"  style="vertical-align: middle;"/>
+            </button>
+            <button id='btn-reset-floater' class='hint--top' aria-label='重置浮标位置' title="重置浮标位置">
+                <img src="arrow-rotate-left-regular.svg" width="14" height="14" style="vertical-align: middle;" />
+            </button>
+            
         </span>
         <span style='color:#AAA'>
-
-           <a href='https://getquicker.net/r?id=12' target="_blank">文档</a>
+            <a href='https://getquicker.net/r?id=12'  target="_blank">
+                文档
+            </a>
         </span>
 
     </div>
 
-    
+
     <!-- <script src='../libs/bs/bootstrap.bundle.min.js'></script> -->
     <script src="popup.js"></script>
 </body>

@@ -33,11 +33,11 @@ var _hostVersion = "";				// MessageHost版本号
 var _enableReport = false;			// 是否开启状态报告
 
 var _buttonPosition = {				// 按钮位置
-	classList:[],
+	classList: [],
 	left: '10px',
 	top: '30%',
-	right:'',
-	bottom:''
+	right: '',
+	bottom: ''
 };
 
 // 消息类型
@@ -48,6 +48,8 @@ const MSG_REGISTER_CONTEXT_MENU = 6; 	// 注册右键菜单
 const MSG_MENU_CLICK = 7;				// 菜单点击
 const MSG_PUSH_ACTIONS = 21;			// 向扩展推送动作列表
 const MSG_ACTION_CLICKED = 22;			// 动作点击了
+const MSG_START_PICKER = 23;			// 启动选择器
+
 
 /* #endregion */
 
@@ -146,9 +148,9 @@ function loadSettings() {
 	});
 
 	// 加载按钮位置
-	chrome.storage.local.get('button_position', function(data){
+	chrome.storage.local.get('button_position', function (data) {
 		console.log('load button position:', data);
-		if (data){
+		if (data) {
 			_buttonPosition = data.button_position;
 		}
 	});
@@ -285,11 +287,11 @@ function OnPortDisconnect(message) {
 /**
  * 通知标签页，端口已经断开，去除显示的悬浮按钮
  */
-function notifyClearActions(){
+function notifyClearActions() {
 	runScriptOnAllTabs(function (tab) {
 		chrome.tabs.sendMessage(tab.id,
 			{
-				cmd: 'clear_actions'			
+				cmd: 'clear_actions'
 			},
 			function (response) {
 				console.log(response);
@@ -377,9 +379,9 @@ function processQuickerCmd(msg) {
 	} else if (msg.messageType === MSG_REGISTER_CONTEXT_MENU) {
 		onMessageRegisterContextMenu(msg);
 		return;
-	} else if (msg.messageType == MSG_PUSH_ACTIONS){
+	} else if (msg.messageType == MSG_PUSH_ACTIONS) {
 		// 推送动作列表
-		onMessagePushActions(msg);	
+		onMessagePushActions(msg);
 		return;
 	}
 
@@ -495,7 +497,7 @@ function onMsgQuickerStateChange(msg) {
 				}
 			})
 		}
-	}else{
+	} else {
 		// quicker断开了，清除悬浮按钮
 		notifyClearActions();
 	}
@@ -527,7 +529,7 @@ function onMessageRegisterContextMenu(msg) {
  * 处理推送动作消息
  * @param {object} msg 推送动作的消息 
  */
-function onMessagePushActions(msg){
+function onMessagePushActions(msg) {
 	console.log('onMessagePushActions:', msg);
 	_actions = msg.data.actions;
 	_actionGroups = msg.data.groups;
@@ -538,7 +540,12 @@ function onMessagePushActions(msg){
 	setupActionsForAllTabs();
 }
 
-
+/**
+ * 右键菜单被点击了
+ * @param {*} info 
+ * @param {*} tab 
+ * @returns 
+ */
 function menuItemClicked(info, tab) {
 	console.log('menu clicked:', info, tab);
 
@@ -1272,7 +1279,7 @@ chrome.runtime.onMessage.addListener(function (messageFromContentOrPopup, sender
 			break;
 		case 'action_clicked':
 			{
-				
+
 
 				// 转发消息给Quicker
 				var msg = {
@@ -1282,7 +1289,7 @@ chrome.runtime.onMessage.addListener(function (messageFromContentOrPopup, sender
 					"message": '',
 					"version": _version,
 					"browser": _browser,
-					"data" : messageFromContentOrPopup.data
+					"data": messageFromContentOrPopup.data
 				};
 
 				console.log('action_clicked, sending to quicker, sending:', msg);
@@ -1311,15 +1318,29 @@ chrome.runtime.onMessage.addListener(function (messageFromContentOrPopup, sender
 				sendResponse();
 			};
 			break;
-		case 'reset_floater_position':{
+		case 'reset_floater_position':
+			{
 
 				// 重置浮动按钮位置
 				resetButtonPosition();
 
-			    // 回调
+				// 回调
 				sendResponse();
 			}
-			break;	
+			break;
+		case 'start_picker':
+			{
+				chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+					const currentTabId = tabs[0].id;
+					sendReplyToQuicker(true, "", { tabId : currentTabId  }, 0, MSG_START_PICKER);
+					console.log('发送开始选择器的命令。');
+				  });
+				
+
+				// 回调
+				sendResponse();
+			}
+			break;
 		default:
 			console.log('unknown message from popup or content:', messageFromContentOrPopup);
 			// 返回
@@ -1331,16 +1352,16 @@ chrome.runtime.onMessage.addListener(function (messageFromContentOrPopup, sender
 /**
  * 重置浮动按钮位置
  */
-function resetButtonPosition(){
+function resetButtonPosition() {
 	var posData = {
-		'classList' : ['left','bottom'],
-		'left'	:'50px',
-		'right':'auto',
+		'classList': ['left', 'bottom'],
+		'left': '50px',
+		'right': 'auto',
 		'top': 'auto',
 		'bottom': '50px'
 	};
 
-	onButtonPositionChanged(null, {data: posData});
+	onButtonPositionChanged(null, { data: posData });
 }
 
 
@@ -1349,22 +1370,21 @@ function resetButtonPosition(){
  * @param {*} originTab 发送消息的标签页
  * @param {*} message 标签页发送来的消息
  */
-function onButtonPositionChanged(originTab, message)
-{
-	
+function onButtonPositionChanged(originTab, message) {
+
 
 	// 保存到变量
 	_buttonPosition = message.data;
 
 	//保存按钮位置
-	chrome.storage.local.set({'button_position': message.data}, function(){
+	chrome.storage.local.set({ 'button_position': message.data }, function () {
 		console.log('button_position saved:', message.data);
 	});
 
 	// 通知其它标签页
-	runScriptOnAllTabs(function(tab){
-		if (originTab === null 
-			|| tab.id != originTab.id){
+	runScriptOnAllTabs(function (tab) {
+		if (originTab === null
+			|| tab.id != originTab.id) {
 			// 如果之前显示了动作，则通知其清除
 			chrome.tabs.sendMessage(tab.id,
 				{
@@ -1374,7 +1394,7 @@ function onButtonPositionChanged(originTab, message)
 				function (response) {
 				});
 		}
-		
+
 	});
 }
 
@@ -1384,9 +1404,9 @@ function onButtonPositionChanged(originTab, message)
  * @param {string} pattern 网址模式
  * @return 是否匹配
  */
-function isUrlMatch(url, pattern){
-	
-	let isMatch =  new RegExp(pattern, 'i').test(url); 
+function isUrlMatch(url, pattern) {
+
+	let isMatch = new RegExp(pattern, 'i').test(url);
 
 	console.log('testing url ', url, ' with pattern:', pattern, ' match:', isMatch);
 
@@ -1399,13 +1419,13 @@ function isUrlMatch(url, pattern){
  * @param {string} p 
  * @returns 
  */
-Array.prototype.sortBy = function(p) {
-	return this.slice(0).sort(function(a,b) {
-	  return (a[p] > b[p]) ? 1 : (a[p] < b[p]) ? -1 : 0;
+Array.prototype.sortBy = function (p) {
+	return this.slice(0).sort(function (a, b) {
+		return (a[p] > b[p]) ? 1 : (a[p] < b[p]) ? -1 : 0;
 	});
-  }
+}
 
-  
+
 
 /**
  * 当某个tab加载完成，content脚本加载完成后，
@@ -1418,21 +1438,21 @@ function setupActionsForTab(tab, position) {
 
 
 
-	console.log('get valid actions, _actions:', _actions ,' actions groups:', _actionGroups, ' url:',url);
+	console.log('get valid actions, _actions:', _actions, ' actions groups:', _actionGroups, ' url:', url);
 
 	let actionsForTab = [];
 
-	if (_actions){
+	if (_actions) {
 		_actions.forEach(action => {
-			if (isUrlMatch(url, action.urlPattern)){
+			if (isUrlMatch(url, action.urlPattern)) {
 				actionsForTab.push(action);
 			}
 		});
 	}
 
-	if (_actionGroups){
+	if (_actionGroups) {
 		_actionGroups.forEach(group => {
-			if (group.actions && isUrlMatch(url, group.urlPattern)){
+			if (group.actions && isUrlMatch(url, group.urlPattern)) {
 				group.actions.forEach(action => {
 					actionsForTab.push(action);
 				});
@@ -1440,12 +1460,12 @@ function setupActionsForTab(tab, position) {
 		});
 	}
 
-	if (actionsForTab.length > 0){
+	if (actionsForTab.length > 0) {
 
 		//sort
 		actionsForTab = actionsForTab.sortBy('title');
 
-		
+
 
 		chrome.tabs.sendMessage(tab.id,
 			{
@@ -1457,7 +1477,7 @@ function setupActionsForTab(tab, position) {
 			},
 			function (response) {
 			});
-	}else{
+	} else {
 		// 如果之前显示了动作，则通知其清除
 		chrome.tabs.sendMessage(tab.id,
 			{
@@ -1466,14 +1486,14 @@ function setupActionsForTab(tab, position) {
 			function (response) {
 			});
 	}
-	
+
 }
 
 /**
  * 对每个标签页，更新动作按钮
  */
-function setupActionsForAllTabs(){
-	runScriptOnAllTabs(function(tab){
+function setupActionsForAllTabs() {
+	runScriptOnAllTabs(function (tab) {
 		setupActionsForTab(tab);
 	});
 }

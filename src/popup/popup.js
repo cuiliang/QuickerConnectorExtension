@@ -171,13 +171,27 @@ document.getElementById('btn-remove-all').addEventListener("click", function () 
 
 // 重置浮标位置
 document.getElementById('btn-reset-floater').addEventListener("click", function () {
-  console.log('reset floater...');
+  
   chrome.runtime.sendMessage(
 		{
 			cmd: 'reset_floater_position',
 			data: {}
-		});
+		},function(){
+      window.close();
+    });
+});
 
+// 获取元素选择器
+document.getElementById('btn-picker').addEventListener("click", function () {
+  
+  chrome.runtime.sendMessage(
+		{
+			cmd: 'start_picker',
+			data: {}
+		},
+    function(){
+      window.close();
+    });
 });
 
 // 更新所有按钮的状态

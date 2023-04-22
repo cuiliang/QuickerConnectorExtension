@@ -104,7 +104,9 @@ a:visited {
     background-color: #FAFAFA;
 }
 .footer{
-    display: flex;justify-content: space-between;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     padding:5px 15px 8px 10px;
     background-color: #FAFAFA;
 }
