@@ -1358,7 +1358,7 @@ function onButtonPositionChanged(originTab, message)
  */
 function isUrlMatch(url, pattern){
 	
-	let isMatch =  new RegExp(pattern, 'g').test(url); 
+	let isMatch =  new RegExp(pattern, 'i').test(url); 
 
 	console.log('testing url ', url, ' with pattern:', pattern, ' match:', isMatch);
 
