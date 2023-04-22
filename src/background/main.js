@@ -1311,6 +1311,15 @@ chrome.runtime.onMessage.addListener(function (messageFromContentOrPopup, sender
 				sendResponse();
 			};
 			break;
+		case 'reset_floater_position':{
+
+				// 重置浮动按钮位置
+				resetButtonPosition();
+
+			    // 回调
+				sendResponse();
+			}
+			break;	
 		default:
 			console.log('unknown message from popup or content:', messageFromContentOrPopup);
 			// 返回
@@ -1320,12 +1329,30 @@ chrome.runtime.onMessage.addListener(function (messageFromContentOrPopup, sender
 })
 
 /**
+ * 重置浮动按钮位置
+ */
+function resetButtonPosition(){
+	var posData = {
+		'classList' : ['left','bottom'],
+		'left'	:'50px',
+		'right':'auto',
+		'top': 'auto',
+		'bottom': '50px'
+	};
+
+	onButtonPositionChanged(null, {data: posData});
+}
+
+
+/**
  * 按钮位置改变后的处理：保存、通知其它标签页
  * @param {*} originTab 发送消息的标签页
  * @param {*} message 标签页发送来的消息
  */
 function onButtonPositionChanged(originTab, message)
 {
+	
+
 	// 保存到变量
 	_buttonPosition = message.data;
 
@@ -1336,7 +1363,8 @@ function onButtonPositionChanged(originTab, message)
 
 	// 通知其它标签页
 	runScriptOnAllTabs(function(tab){
-		if (tab.id != originTab.id){
+		if (originTab === null 
+			|| tab.id != originTab.id){
 			// 如果之前显示了动作，则通知其清除
 			chrome.tabs.sendMessage(tab.id,
 				{

@@ -169,6 +169,16 @@ document.getElementById('btn-remove-all').addEventListener("click", function () 
   });
 });
 
+// 重置浮标位置
+document.getElementById('btn-reset-floater').addEventListener("click", function () {
+  console.log('reset floater...');
+  chrome.runtime.sendMessage(
+		{
+			cmd: 'reset_floater_position',
+			data: {}
+		});
+
+});
 
 // 更新所有按钮的状态
 function updateAllButtons() {

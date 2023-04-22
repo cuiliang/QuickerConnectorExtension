@@ -12,7 +12,7 @@
 // });
 
 // LOGGING based on if in dev mode
-const IS_DEV_MODE = !('update_url' in chrome.runtime.getManifest());
+var IS_DEV_MODE = !('update_url' in chrome.runtime.getManifest());
 function _log(...args){
 	if (IS_DEV_MODE){
 		console.log(...args);

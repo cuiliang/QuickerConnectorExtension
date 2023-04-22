@@ -1,6 +1,6 @@
 {
   "name": "Quicker Connector",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "manifest_version": 2,
   "description": "Native message connector with Quicker application",
   "background": {
