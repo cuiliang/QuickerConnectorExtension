@@ -1408,7 +1408,7 @@ function isUrlMatch(url, pattern) {
 
 	let isMatch = new RegExp(pattern, 'i').test(url);
 
-	console.log('testing url ', url, ' with pattern:', pattern, ' match:', isMatch);
+	//console.log('testing url ', url, ' with pattern:', pattern, ' match:', isMatch);
 
 	return isMatch;
 }
@@ -1462,8 +1462,8 @@ function setupActionsForTab(tab, position) {
 
 	if (actionsForTab.length > 0) {
 
-		//sort
-		actionsForTab = actionsForTab.sortBy('title');
+		//sort on client
+		//actionsForTab = actionsForTab.sortBy('title');
 
 
 
