@@ -10,6 +10,7 @@ import {
 import { sendReplyToQuicker, reportUrlChange } from './messaging.js';
 import { setupActionsForAllTabs, runScriptOnTab, executeOnTab, runScriptOnAllTabs } from './tabs.js';
 import { updateConnectionState } from './ui.js';
+import { isChromeTabUrl } from './utils.js';
 
 /**
  * 处理Quicker命令
@@ -351,22 +352,18 @@ function runScript(msg) {
 
   if (!tabId) {
     chrome.tabs.query({ lastFocusedWindow: true, active: true }, function (tabs) {
-      if (tabs.length < 1) {
-        sendReplyToQuicker(false, "Can not find active tab.", {}, msg.serial);
-        return;
-      }
+			if (tabs.length < 1) {
+				sendReplyToQuicker(false, "Can not find active tab.", {}, msg.serial);
+				return;
+			}
 
-      import('./utils.js').then(({ isChromeTabUrl }) => {
-        if (isChromeTabUrl(tabs[0].url)) {
-          sendReplyToQuicker(false, "Can not run on this page.", {}, msg.serial);
-        } else {
-          runScriptOnTab(tabs[0].id, script, msg);
-        }
-      }).catch(err => {
-        console.error("Failed to import utils.js:", err);
-        sendReplyToQuicker(false, "Internal error importing utils.", {}, msg.serial);
-      });
-    });
+			if (isChromeTabUrl(tabs[0].url)) {
+				sendReplyToQuicker(false, "Can not run on this page.", {}, msg.serial)
+			} else {
+				runScriptOnTab(tabs[0].id, script, msg);
+			}
+
+		});
   } else {
     runScriptOnTab(tabId, script, msg);
   }

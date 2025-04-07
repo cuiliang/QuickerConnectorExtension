@@ -97,97 +97,26 @@ export function setupActionsForTab(tab, position) {
   }
 
   if (actionsForTab.length > 0) {
-    console.log(`Sending setup_actions to tab ${tab.id} with ${actionsForTab.length} actions.`);
-    chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: (scriptToRun) => {
-        // This function runs in the content script context
-        // IMPORTANT: It cannot directly access variables from the background script scope (like 'code')
-        // We pass the script content via 'args'
-        try {
-          // Attempt to execute the script. 'eval' is often discouraged due to security risks.
-          // Consider alternative methods if possible, like message passing.
-          return eval(scriptToRun);
-        } catch (e) {
-          // Return error information if execution fails
-          return { error: e.toString(), stack: e.stack };
-        }
-      },
-      args: [JSON.stringify({
-        cmd: 'setup_actions',
-        actions: actionsForTab,
-        menuIcon: _menuIcon,
-        menuButtonBgColor: _menuButtonBgColor,
-        position: _buttonPosition || position
-      })]
-    }, (injectionResults) => {
-      // Check for errors, but specifically ignore non-structured-clonable errors
-      // as the executed script might intentionally return complex objects (like functions or DOM elements)
-      // which cannot be cloned across the extension boundary.
-      let finalResult = null;
-      let scriptError = null;
 
-      if (chrome.runtime.lastError) {
-        scriptError = chrome.runtime.lastError.message;
-        console.warn('executeScript injection error:', scriptError);
-      } else if (injectionResults && injectionResults.length > 0) {
-        // Find the result from the main frame (frameId 0) or the first successful result
-        const mainFrameResult = injectionResults.find(r => r.frameId === 0);
-        if (mainFrameResult) {
-          if (mainFrameResult.error) {
-            scriptError = typeof mainFrameResult.error === 'object' ? mainFrameResult.error.message : mainFrameResult.error;
-            console.warn('Script execution error in main frame:', mainFrameResult.error);
-          } else {
-            finalResult = mainFrameResult.result;
-          }
-        } else {
-          // Fallback: take the first result if no main frame result
-          const firstResult = injectionResults[0];
-          if (firstResult.error) {
-            scriptError = typeof firstResult.error === 'object' ? firstResult.error.message : firstResult.error;
-            console.warn('Script execution error in frame:', firstResult.frameId, firstResult.error);
-          } else {
-            finalResult = firstResult.result;
-          }
-        }
-      }
-
-      // Handle non-structured-clonable results gracefully (often functions or DOM elements)
-      if (scriptError && scriptError.includes("non-structured-clonable")) {
-        console.log('Script returned non-structured-clonable data (ignored).');
-        scriptError = null; // Don't treat this as a fatal error for reply purposes
-        // finalResult might still be null or undefined here, which is okay.
-      }
-
-      console.log('run script result:', finalResult, 'Error:', scriptError);
-
-      // If not waiting for a manual reply, send the result back immediately.
-      if (!waitManualReturn) {
-        if (scriptError) {
-          sendReplyToQuicker(false, scriptError, null, msg.serial);
-        } else {
-          sendReplyToQuicker(true, "", finalResult, msg.serial);
-        }
-      }
-    });
-  } else {
-    // If no actions apply, send clear_actions to remove any existing UI
-    console.log(`Sending clear_actions to tab ${tab.id}`);
-    chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: () => {
-        chrome.tabs.sendMessage(tab.id, { cmd: 'clear_actions' }, (response) => {
-          // Check for errors when sending message to content script
-          if (chrome.runtime.lastError) {
-            // Avoid logging errors if the tab was closed or navigated away before receiving the message
-            if (!chrome.runtime.lastError.message.includes("Receiving end does not exist")) {
-              console.warn(`Error sending 'clear_actions' to tab ${tab.id}: ${chrome.runtime.lastError.message}`);
-            }
-          }
-        });
-      }
-    });
-  }
+		chrome.tabs.sendMessage(tab.id,
+			{
+				cmd: 'setup_actions',
+				actions: actionsForTab,
+				menuIcon: _menuIcon,
+				menuButtonBgColor: _menuButtonBgColor,
+				position: _buttonPosition
+			},
+			function (response) {
+			});
+	} else {
+		// 如果之前显示了动作，则通知其清除
+		chrome.tabs.sendMessage(tab.id,
+			{
+				cmd: 'clear_actions'
+			},
+			function (response) {
+			});
+	}
 }
 
 /**
@@ -242,71 +171,31 @@ export function runScriptOnTab(tabId, script, msg) {
     // details.allFrames = false; // Consider forcing this if frameId is present
   }
 
-  // Note: chrome.tabs.executeScript is deprecated in MV3. Use chrome.scripting.executeScript instead.
-  chrome.scripting.executeScript({
+  //
+  chrome.userScripts.execute({
+    js:[
+      {
+        code: code
+      }
+    ],
     target: { tabId: tabId, allFrames: details.allFrames, frameIds: details.frameId ? [details.frameId] : undefined },
-    func: (scriptToRun) => {
-      // This function runs in the content script context
-      // IMPORTANT: It cannot directly access variables from the background script scope (like 'code')
-      // We pass the script content via 'args'
-      try {
-        // Attempt to execute the script. 'eval' is often discouraged due to security risks.
-        // Consider alternative methods if possible, like message passing.
-        return eval(scriptToRun);
-      } catch (e) {
-        // Return error information if execution fails
-        return { error: e.toString(), stack: e.stack };
-      }
-    },
-    args: [code] // Pass the actual script code here
-  }, (injectionResults) => {
-    // Check for errors, but specifically ignore non-structured-clonable errors
-    // as the executed script might intentionally return complex objects (like functions or DOM elements)
-    // which cannot be cloned across the extension boundary.
-    let finalResult = null;
-    let scriptError = null;
+    world:'MAIN'
+  }, 
+    
+    function(result){
+      //result: InjectionResult[]
+      if (chrome.runtime.lastError
+				&& chrome.runtime.lastError.message.includes("result is non-structured-clonable data") === false) {
+				console.warn('execute tab script error:', chrome.runtime.lastError)
+				sendReplyToQuicker(false, chrome.runtime.lastError.message, result, msg.serial);
+			} else {
+				console.log('run script result:', result);
 
-    if (chrome.runtime.lastError) {
-      scriptError = chrome.runtime.lastError.message;
-      console.warn('executeScript injection error:', scriptError);
-    } else if (injectionResults && injectionResults.length > 0) {
-      // Find the result from the main frame (frameId 0) or the first successful result
-      const mainFrameResult = injectionResults.find(r => r.frameId === 0);
-      if (mainFrameResult) {
-        if (mainFrameResult.error) {
-          scriptError = typeof mainFrameResult.error === 'object' ? mainFrameResult.error.message : mainFrameResult.error;
-          console.warn('Script execution error in main frame:', mainFrameResult.error);
-        } else {
-          finalResult = mainFrameResult.result;
-        }
-      } else {
-        // Fallback: take the first result if no main frame result
-        const firstResult = injectionResults[0];
-        if (firstResult.error) {
-          scriptError = typeof firstResult.error === 'object' ? firstResult.error.message : firstResult.error;
-          console.warn('Script execution error in frame:', firstResult.frameId, firstResult.error);
-        } else {
-          finalResult = firstResult.result;
-        }
-      }
-    }
+				// 如果需要等待手动响应，则不直接返回脚本结果，而是等待脚本返回
+				if (!waitManualReturn) {
+					sendReplyToQuicker(true, "", result, msg.serial);
+				}
+			}
+  })
 
-    // Handle non-structured-clonable results gracefully (often functions or DOM elements)
-    if (scriptError && scriptError.includes("non-structured-clonable")) {
-      console.log('Script returned non-structured-clonable data (ignored).');
-      scriptError = null; // Don't treat this as a fatal error for reply purposes
-      // finalResult might still be null or undefined here, which is okay.
-    }
-
-    console.log('run script result:', finalResult, 'Error:', scriptError);
-
-    // If not waiting for a manual reply, send the result back immediately.
-    if (!waitManualReturn) {
-      if (scriptError) {
-        sendReplyToQuicker(false, scriptError, null, msg.serial);
-      } else {
-        sendReplyToQuicker(true, "", finalResult, msg.serial);
-      }
-    }
-  });
 } 

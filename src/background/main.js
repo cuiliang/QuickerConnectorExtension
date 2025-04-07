@@ -41,9 +41,7 @@ self.state = {
 console.log("Quicker Chrome Connector starting...");
 
 // 兼容Firefox
-if (typeof _browser !== 'undefined') {
-	chrome = _browser;
-}
+chrome = chrome || browser;
 
 // 初始化状态
 updateConnectionState(false, false);
