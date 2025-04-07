@@ -4,8 +4,7 @@
   "manifest_version": 3,
   "description": "Native message connector with Quicker application",
   "background": {
-    "service_worker": "background/main.js",
-    "type": "module"
+    "service_worker": "background/main.js"
   },
   "web_accessible_resources": [
     {
@@ -42,8 +41,7 @@
     "storage",
     "tts",
     "scripting",
-    "alarms",
-    "userScripts"
+    "alarms"
   ],
   "optional_permissions": [
     "bookmarks",

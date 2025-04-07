@@ -201,3 +201,50 @@ function updateAllButtons() {
     updatePermissionButton(permission);
   }
 }
+
+// 监听来自 background script 的消息
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log("Message received in popup:", message);
+  if (message.cmd === 'update_popup_ui') {
+    updatePopupElements(message.data);
+    sendResponse({ status: "Popup UI updated" }); // Acknowledge message receipt
+  }
+  // Keep the message channel open for asynchronous responses if needed, though not strictly necessary here
+  // return true; 
+});
+
+/**
+ * 根据从 background script 收到的数据更新 Popup DOM 元素
+ * @param {object} data 包含 UI 状态信息的对象
+ */
+function updatePopupElements(data) {
+  console.log("Updating popup elements with data:", data);
+  
+  const hostElement = document.getElementById('msgHostConnection');
+  const quickerElement = document.getElementById('quickerConnection');
+  const browserElement = document.getElementById('browser');
+  const versionElement = document.getElementById('extVersion');
+
+  if (hostElement) {
+    hostElement.innerHTML = data.isHostConnected
+      ? `<span class='success'>已连接 <span class='version'>${data.hostVersion || ''}</span></span>`
+      : "<span class='error hint--bottom' aria-label='Quicker或消息代理尚未安装'>未连接</span>";
+  }
+  if (quickerElement) {
+    quickerElement.innerHTML = data.isQuickerConnected
+      ? `<span class='success'>已连接 <span class='version'>${data.quickerVersion || ''}</span></span>`
+      : "<span class='error hint--bottom' aria-label='Quicker未启动或版本过旧'>未连接</span>";
+  }
+  if (browserElement) {
+    // Use the browser name provided by the background script
+    browserElement.innerText = data.browserName || '未知浏览器'; 
+  }
+  if (versionElement) {
+    // Use the version provided by the background script
+    versionElement.innerText = data.extensionVersion || '未知版本'; 
+  }
+}
+
+// Initial UI update request when popup opens (already exists in window.onload)
+// We keep the existing request in window.onload to ensure UI is updated immediately upon opening.
+// The listener above will handle subsequent updates pushed from the background.
