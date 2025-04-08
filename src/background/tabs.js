@@ -162,6 +162,8 @@ export function runScriptOnTab(tabId, script, msg) {
   const frameId = msg.data.frameId;
   const waitManualReturn = msg.data.waitManualReturn;
 
+  const world = msg.data.world || 'USER_SCRIPT';
+
   const code = waitManualReturn
     ? script.replace('qk_msg_serial', msg.serial)  // Inject serial for manual reply
     : script;
@@ -177,15 +179,36 @@ export function runScriptOnTab(tabId, script, msg) {
     // details.allFrames = false; // Consider forcing this if frameId is present
   }
 
+  const target = { 
+    tabId: tabId, 
+    allFrames: details.allFrames, 
+    frameIds: details.frameId ? [details.frameId] : undefined 
+  };
+
+  // 
+  // chrome.userScripts.register({
+  //   id:'userScriptApi',
+  //   js:[
+  //     {
+  //       files: ['./userScripts/userScriptApi.js']
+  //     }
+  //   ],
+  //   target: target,
+  //   world: world // MAIN, USER_SCRIPT.
+  // })
+
   //
   chrome.userScripts.execute({
     js:[
       {
+        file: './userScripts/userScriptApi.js'
+      },
+      {
         code: code
       }
     ],
-    target: { tabId: tabId, allFrames: details.allFrames, frameIds: details.frameId ? [details.frameId] : undefined },
-    world:'USER_SCRIPT'  // MAIN, USER_SCRIPT.
+    target: target,
+    world: world // MAIN, USER_SCRIPT.
   }, 
     
     function(result){

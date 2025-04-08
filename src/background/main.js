@@ -17,6 +17,7 @@ import { processQuickerCmd } from './message-handler.js';
 import { sendReplyToQuicker } from './messaging.js';
 import { installToExistingTabs, setupActionsForAllTabs } from './tabs.js';
 import { DEFAULT_BUTTON_POSITION, MSG_REPORT_ACTIVE_TAB_STATE, MSG_MENU_CLICK } from './constants.js';
+import { setupUserScriptHandlers } from './userScriptMessageHandler.js';
 
 // 初始化浏览器信息
 self.browserInfo = {
@@ -56,10 +57,7 @@ loadSettings();
 setupReports();
 setupContextMenuListener();
 setupMessageListener();
-
-chrome.userScripts.configureWorld({
-	messaging: true
-  });
+setupUserScriptHandlers();
 
 // 启动时重新连接
 chrome.runtime.onStartup.addListener(function () {
