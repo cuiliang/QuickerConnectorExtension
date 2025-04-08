@@ -57,6 +57,10 @@ setupReports();
 setupContextMenuListener();
 setupMessageListener();
 
+chrome.userScripts.configureWorld({
+	messaging: true
+  });
+
 // 启动时重新连接
 chrome.runtime.onStartup.addListener(function () {
 	console.log('runtime on startup. connect()...');
@@ -111,10 +115,10 @@ function OnPortMessage(msg) {
  */
 function onMessagePushActions(msg) {
 	console.log('onMessagePushActions:', msg);
-	_actions = msg.data.actions;
-	_actionGroups = msg.data.groups;
-	_menuIcon = msg.data.menuIcon;
-	_menuButtonBgColor = msg.data.menuButtonBgColor;
+	self.state._actions = msg.data.actions;
+	self.state._actionGroups = msg.data.groups;
+	self.state._menuIcon = msg.data.menuIcon;
+	self.state._menuButtonBgColor = msg.data.menuButtonBgColor;
 
 	//安装到所有标签页
 	setupActionsForAllTabs();
@@ -129,7 +133,7 @@ function onMessagePushActions(msg) {
 function menuItemClicked(info, tab) {
 	console.log('menu clicked:', info, tab);
 
-	if (!state._isQuickerConnected) {
+	if (!self.state._isQuickerConnected) {
 		console.warn('尚未连接到Quicker！');
 		return;
 	}
@@ -216,10 +220,10 @@ chrome.runtime.onMessage.addListener(function (messageFromContentOrPopup, sender
 function onMsgQuickerStateChange(msg) {
 	if (msg.data.isConnected) {
 		self.browserInfo.name = msg.data.browser;
-		state._quickerVersion = msg.data.quickerVersion;
-		state._hostVersion = msg.data.hostVersion;
+		self.state._quickerVersion = msg.data.quickerVersion;
+		self.state._hostVersion = msg.data.hostVersion;
 
-		if (state._enableReport) {
+		if (self.state._enableReport) {
 			chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
 				if (tabs.length > 0) {
 					reportUrlChange(tabs[0].tabId, tabs[0].url, tabs[0].active, 1);
@@ -247,9 +251,6 @@ function onMessageRegisterContextMenu(msg) {
 		});
 	}
 }
-
-
-
 
 /**
  * 按属性排序

@@ -67,6 +67,12 @@ export function setupActionsForAllTabs() {
  */
 export function setupActionsForTab(tab, position) {
   const url = tab.url;
+
+  if (isChromeTabUrl(url)) {
+    console.log('setupActionsForTab: skip chrome tab:', url);
+    return;
+  }
+
   // Note: Relies on global state. Consider passing state explicitly or using a state management module.
   const { _actions, _actionGroups, _menuIcon, _menuButtonBgColor, _buttonPosition } = self.state || {}; // Use self.state
 
@@ -179,7 +185,7 @@ export function runScriptOnTab(tabId, script, msg) {
       }
     ],
     target: { tabId: tabId, allFrames: details.allFrames, frameIds: details.frameId ? [details.frameId] : undefined },
-    world:'MAIN'
+    world:'USER_SCRIPT'  // MAIN, USER_SCRIPT.
   }, 
     
     function(result){

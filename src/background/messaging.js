@@ -37,7 +37,7 @@ export function sendReplyToQuicker(isSuccess, message, data, replyTo, msgType = 
     "browser": _browser
   };
   
-  console.log('sending message to quicker:', msg);
+  //console.log('sending message to quicker:', msg);
 
   // 发送结果
   sendMessageToQuicker(msg);

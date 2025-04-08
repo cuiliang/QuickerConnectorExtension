@@ -348,7 +348,7 @@ function runScript(msg) {
   const tabId = msg.tabId;
   const script = msg.data.script;
 
-  console.log('running script on tab:', script);
+  console.log('running script on tab:', msg.data);
 
   if (!tabId) {
     chrome.tabs.query({ lastFocusedWindow: true, active: true }, function (tabs) {

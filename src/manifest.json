@@ -2,7 +2,7 @@
   "name": "Quicker Connector",
   "version": "0.8.0",
   "manifest_version": 3,
-  "minimum_chrome_version": "120",
+  "minimum_chrome_version": "135",
   "description": "Native message connector with Quicker application",
   "background": {
     "service_worker": "background/main.js",
@@ -44,7 +44,8 @@
     "tts",
     "scripting",
     "alarms",
-    "userScripts"
+    "userScripts",
+    "activeTab"
   ],
   "optional_permissions": [
     "bookmarks",

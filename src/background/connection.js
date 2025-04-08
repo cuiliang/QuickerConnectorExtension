@@ -205,6 +205,7 @@ function onPortMessage(msg) {
  * @param {object} msg 要发送的消息对象
  */
 export function sendMessageToQuicker(msg) {
+  console.log('sending message to quicker:', msg);
   if (_port) {
     _port.postMessage(msg);
   } else {

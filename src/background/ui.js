@@ -4,23 +4,11 @@ import { DEFAULT_BUTTON_POSITION } from './constants.js';
 import { getBrowserName } from './utils.js';
 import { runScriptOnAllTabs } from './tabs.js';
 
-// Note: This object acts as the central state store and is mutated directly
-// by various modules (ui.js, settings.js, message-handler.js, event-handlers.js).
-// Consider a more robust state management pattern for better maintainability.
-const state = {
-  _isHostConnected: false,
-  _isQuickerConnected: false,
-  _quickerVersion: "",
-  _hostVersion: "",
-  _actions: [],
-  _actionGroups: [],
-  _menuIcon: null,
-  _menuButtonBgColor: null,
-  _buttonPosition: { ...DEFAULT_BUTTON_POSITION } // Use default from constants
-};
+// 删除本地state定义，改为使用main.js中定义的self.state
+// 注意：state对象在main.js中已作为self.state全局定义
 
-// Export the state object for other modules to import and potentially mutate
-export { state };
+// 删除导出state的语句
+// export { state };
 
 /**
  * 更新连接状态
@@ -28,10 +16,10 @@ export { state };
  * @param {boolean} quickerConnected 是否连接到Quicker
  */
 export function updateConnectionState(hostConnected, quickerConnected) {
-  const quickerWasConnected = state._isQuickerConnected;
+  const quickerWasConnected = self.state._isQuickerConnected;
 
-  state._isHostConnected = hostConnected;
-  state._isQuickerConnected = quickerConnected;
+  self.state._isHostConnected = hostConnected;
+  self.state._isQuickerConnected = quickerConnected;
 
   // If Quicker just disconnected, clear context menus
   if (quickerWasConnected && !quickerConnected) {
@@ -58,10 +46,10 @@ export function updateUi() {
 	chrome.runtime.sendMessage({
 		cmd: 'update_popup_ui',
 		data: {
-			isHostConnected: state._isHostConnected,
-			hostVersion: state._hostVersion,
-			isQuickerConnected: state._isQuickerConnected,
-			quickerVersion: state._quickerVersion,
+			isHostConnected: self.state._isHostConnected,
+			hostVersion: self.state._hostVersion,
+			isQuickerConnected: self.state._isQuickerConnected,
+			quickerVersion: self.state._quickerVersion,
 			browserName: getBrowserName(), // Re-use existing utility
 			extensionVersion: chrome.runtime.getManifest().version
 		}
@@ -100,7 +88,7 @@ export function onButtonPositionChanged(originTab, message) {
   }
 
   // 保存到 state
-  state._buttonPosition = newPosition;
+  self.state._buttonPosition = newPosition;
 
   // 保存按钮位置到 local storage
   chrome.storage.local.set({ 'button_position': newPosition }, () => {

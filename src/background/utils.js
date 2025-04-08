@@ -23,7 +23,10 @@ export function isUrlMatch(url, pattern) {
 export function isChromeTabUrl(url) {
   if (url
     && (url.indexOf("chrome") === 0
-      || url.indexOf("https://chrome.google.com/") === 0)
+      || url.indexOf("https://chrome.google.com/") === 0
+      || url.indexOf("chrome-extension://") === 0
+      || url.indexOf("https://chromewebstore.google.com/") === 0
+    )
   ) {
     return true;
   }
