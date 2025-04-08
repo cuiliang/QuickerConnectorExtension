@@ -185,28 +185,53 @@ export function runScriptOnTab(tabId, script, msg) {
     frameIds: details.frameId ? [details.frameId] : undefined 
   };
 
-  // 
-  // chrome.userScripts.register({
-  //   id:'userScriptApi',
-  //   js:[
-  //     {
-  //       files: ['./userScripts/userScriptApi.js']
-  //     }
-  //   ],
-  //   target: target,
-  //   world: world // MAIN, USER_SCRIPT.
-  // })
+  
+  const scriptSource = [];
+  // 检查脚本是否包含'quicker'关键字
+  if (code.includes('quicker')) {
+    scriptSource.push({
+      file: './userScripts/userScriptApi.js'
+    });
+  }
+
+  // 检查脚本是否包含jQuery代码
+  if (code.includes('$') || code.includes('jQuery')) {
+    scriptSource.push({
+      file: './libs/jquery-3.6.0.min.js'
+    });
+  }
+  
+  // 检查脚本是否使用了_x函数
+  if (code.includes('_x(')) {
+    scriptSource.push({
+      code: `
+/**
+ * 增加xpath解析支持
+ * @param {*} STR_XPATH XPath
+ */
+function _x(STR_XPATH) {
+	var xresult = document.evaluate(STR_XPATH, document, null, XPathResult.ANY_TYPE, null);
+	var xnodes = [];
+	var xres;
+	while (xres = xresult.iterateNext()) {
+		xnodes.push(xres);
+	}
+
+	return xnodes;
+}`
+    });
+  }
+  
+  // 添加用户脚本代码
+  scriptSource.push({
+    code: code
+  });
+  
+
 
   //
   chrome.userScripts.execute({
-    js:[
-      {
-        file: './userScripts/userScriptApi.js'
-      },
-      {
-        code: code
-      }
-    ],
+    js: scriptSource,
     target: target,
     world: world // MAIN, USER_SCRIPT.
   }, 
