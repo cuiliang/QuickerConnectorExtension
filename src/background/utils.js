@@ -40,7 +40,16 @@ export function isChromeTabUrl(url) {
 export function getBrowserName() {
   // navigator.userAgentData is a more modern approach but might not be fully supported everywhere.
   // Sticking to userAgent for broader compatibility within extensions for now.
+
+  if (self.browser != undefined) {
+    return 'firefox';
+  }
+
   const userAgent = navigator.userAgent;
+
+  if (navigator.userAgent.indexOf("Firefox") > -1) {
+    return 'firefox';
+  }
 
   if (userAgent.indexOf("Edg/") !== -1) {
     return "msedge"; // Microsoft Edge (Chromium)

@@ -1,14 +1,24 @@
 "use strict";
 
-import { HOST_NAME } from './constants.js';
-import { updateConnectionState } from './ui.js';
-import { installToExistingTabs, runScriptOnAllTabs } from './tabs.js';
-import { processQuickerCmd } from './message-handler.js';
-import { getBrowserName } from './utils.js';
+import {HOST_NAME, MSG_COMMAND_RESP, MSG_REPORT_ACTIVE_TAB_STATE} from './constants.js';
+import {updateConnectionState} from './ui.js';
+import {installToExistingTabs, notifyClearActions} from './tabs.js';
+import {processQuickerCmd} from './quicker-message-handler.js';
+import {getBrowserName} from './utils.js';
 
-// 与浏览器的连接端口
-let _port = null;
+/**
+ *  连接到ChromeAgent
+ */
+
+
+let _port = null; // 与NativeMessageHost的连接端口
 let reconnectTimer = null; // Timer for scheduling reconnects
+const manifest = chrome.runtime.getManifest();
+const _version = manifest.version;
+const _browser = getBrowserName();
+
+//#region 连接管理
+
 
 /**
  * Schedules a reconnection attempt after a delay.
@@ -80,34 +90,7 @@ export function connect() {
   sendHelloMessage();
 }
 
-/**
- * 发送Hello消息
- */
-function sendHelloMessage() {
-  try {
-    // 从存储中获取浏览器类型和版本
-    const manifest = chrome.runtime.getManifest();
-    const _version = manifest.version;
-    const _browser = getBrowserName();
 
-    // Check if _port is still valid before sending
-    if (!_port) {
-      console.warn("sendHelloMessage: Port is not connected.");
-      return;
-    }
-
-    _port.postMessage({
-      replyTo: -1,
-      message: "Hello!",
-      browser: _browser,
-      version: _version,
-      isSuccess: true
-    });
-  } catch (e) {
-    console.error(e);
-    _port = null;
-  }
-}
 
 /**
  * 去除监听事件
@@ -126,7 +109,7 @@ function removePortListener() {
 
 /**
  * 端口断开
- * @param {*} message 
+ * @param {*} message
  */
 function onPortDisconnect(message) {
   console.log("Port Disconnected");
@@ -156,30 +139,25 @@ function onPortDisconnect(message) {
   notifyClearActions();
 }
 
+
 /**
- * 通知标签页，端口已经断开，去除显示的悬浮按钮
+ * 获取当前端口
+ * @returns {object} 当前连接端口
  */
-function notifyClearActions() {
-  runScriptOnAllTabs(function (tab) {
-    chrome.tabs.sendMessage(tab.id,
-      {
-        cmd: 'clear_actions'
-      },
-      function (response) {
-        // Check for errors when sending message to tabs
-        if (chrome.runtime.lastError) {
-          console.warn(`Error sending 'clear_actions' to tab ${tab.id}: ${chrome.runtime.lastError.message}`);
-        } else {
-          // Optional: Log success or response if needed
-          // console.log(`'clear_actions' sent to tab ${tab.id}, response:`, response);
-        }
-      });
-  });
+export function getPort() {
+  return _port;
 }
+
+//#endregion
+
+
+
+
+//#region 消息接收
 
 /**
  * 端口收到消息的处理（来自Quicker的消息）
- * @param {*} msg 
+ * @param {*} msg
  * 消息格式：
  *    serial: 消息序号，响应时在replyTo中返回，以便于pc端进行消息对应
  *    cmd: 命令
@@ -200,11 +178,28 @@ function onPortMessage(msg) {
   processQuickerCmd(msg);
 }
 
+//#endregion
+
+
+
+//#region 发送消息
+
 /**
- * 向Quicker发送消息
+ * 向Quicker发送消息, 自动补全参数。
  * @param {object} msg 要发送的消息对象
  */
 export function sendMessageToQuicker(msg) {
+  // 补全参数
+  addDefaultProperties(msg, messageDefaults);
+
+  sendMessageToQuickerRaw(msg);
+}
+
+/**
+ * 向Quicker发送消息（原始任意消息）
+ * @param msg
+ */
+function sendMessageToQuickerRaw(msg) {
   console.log('sending message to quicker:', msg);
   if (_port) {
     _port.postMessage(msg);
@@ -214,9 +209,94 @@ export function sendMessageToQuicker(msg) {
 }
 
 /**
- * 获取当前端口
- * @returns {object} 当前连接端口
+ * 发送Hello消息
  */
-export function getPort() {
-  return _port;
-} 
+function sendHelloMessage() {
+  try {
+    // Check if _port is still valid before sending
+    if (!_port) {
+      console.warn("sendHelloMessage: Port is not connected.");
+      return;
+    }
+
+    sendMessageToQuickerRaw({
+      replyTo: -1,
+      message: "Hello!",
+      browser: _browser,
+      version: _version,
+      isSuccess: true
+    });
+  } catch (e) {
+    console.error(e);
+    _port = null;
+  }
+}
+
+
+/**
+ * 向Quicker发送响应消息
+ * @param {boolean} isSuccess 操作是否成功
+ * @param {string} message 失败时，消息内容
+ * @param {*} data 成功时，返回的数据内容
+ * @param {integer} replyTo 所回复的来源消息的编号
+ * @param {integer} msgType 可选的消息类型。用于非命令响应的情况
+ */
+export function sendReplyToQuicker(isSuccess, message, data, replyTo, msgType = MSG_COMMAND_RESP) {
+  // 如果返回的结果是简单类型，将其封装在对象中
+  if (data) {
+    if (typeof data !== "object") {
+      console.log('warpping data in object.', data);
+      data = {
+        data: data
+      };
+    }
+  }
+
+
+
+  const msg = {
+    "messageType": msgType,
+    "isSuccess": isSuccess,
+    "replyTo": replyTo,
+    "message": message,
+    "data": data
+  };
+
+  //console.log('sending message to quicker:', msg);
+
+  // 发送结果
+  sendMessageToQuicker(msg);
+}
+
+/**
+ * 发送最新的网址以方便切换场景
+ * @param {number} tabId 更新的标签页ID
+ * @param {string} url 更新的网址
+ * @param {boolean} isActive 标签页是否为活动标签页
+ * @param {number} eventType 事件类型：1. 标签页激活。 2. 网址变更。 3. 窗口激活。
+ */
+export function reportUrlChange(tabId, url, isActive, eventType) {
+  sendReplyToQuicker(true, "", {tabId, url, isActive, eventType}, 0, MSG_REPORT_ACTIVE_TAB_STATE);
+}
+
+
+function addDefaultProperties(obj, defaults) {
+  for (const key in defaults) {
+    // 只有当对象没有该属性或属性值为undefined时才添加
+    if (obj[key] === undefined) {
+      obj[key] = defaults[key];
+    }
+  }
+  return obj;
+}
+
+const messageDefaults = {
+  "version": _version,
+  "browser": _browser,
+  "messageType": 0,
+  "isSuccess": true,
+  "replyTo": 0,
+  "message": ''
+};
+
+//#endregion

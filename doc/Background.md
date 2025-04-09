@@ -40,8 +40,10 @@ Quicker Chrome Connector 的后台模块负责在浏览器扩展与 Quicker 桌�
 - `onPortDisconnect()`: 处理端口断开事件
 - `notifyClearActions()`: 通知标签页清除动作
 - `sendMessageToQuicker()`: 向 Quicker 发送消息
+- `sendReplyToQuicker()`: 向 Quicker 发送回复消息
+- `reportUrlChange()`: 报告 URL 变更
 
-### 3. message-handler.js - 消息处理
+### 3. quicker-message-handler.js - 消息处理
 
 处理来自 Quicker 的各种命令和消息请求。
 
@@ -76,17 +78,7 @@ Quicker Chrome Connector 的后台模块负责在浏览器扩展与 Quicker 桌�
 - `executeOnTab()`: 在指定标签页上执行函数
 - `runScriptOnTab()`: 在标签页上运行脚本
 
-### 5. messaging.js - 消息传递
 
-处理消息传递和格式化，确保消息能正确地在扩展与 Quicker 之间传递。
-
-**主要功能：**
-- 向 Quicker 发送响应消息
-- 标准化消息格式
-
-**关键方法：**
-- `sendReplyToQuicker()`: 向 Quicker 发送回复消息
-- `reportUrlChange()`: 报告 URL 变更
 
 ### 6. ui.js - 用户界面管理
 

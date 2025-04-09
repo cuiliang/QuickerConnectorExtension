@@ -51,20 +51,6 @@ function sendReplyToQuicker(isSuccess, message, data, replyTo) {
     sendToQuicker(messageToSend);
 }
 
-/**
- * 增加xpath解析支持
- * @param {*} STR_XPATH XPath
- */
-function _x(STR_XPATH) {
-	var xresult = document.evaluate(STR_XPATH, document, null, XPathResult.ANY_TYPE, null);
-	var xnodes = [];
-	var xres;
-	while (xres = xresult.iterateNext()) {
-		xnodes.push(xres);
-	}
-
-	return xnodes;
-}
 
 
 // How this function becomes available to the user script depends on how

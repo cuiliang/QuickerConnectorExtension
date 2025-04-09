@@ -1,7 +1,13 @@
 "use strict";
 
-import { isChromeTabUrl, isUrlMatch } from './utils.js';
-import { sendReplyToQuicker } from './messaging.js';
+import {isChromeTabUrl, isUrlMatch} from './utils.js';
+
+import {sendReplyToQuicker} from "./connection.js";
+
+/**
+ * 与浏览器标签页的交互
+ */
+
 
 /**
  * 将脚本安装到当前已经打开的标签页中
@@ -252,4 +258,25 @@ function _x(STR_XPATH) {
 			}
   })
 
-} 
+}
+
+/**
+ * 通知标签页，端口已经断开，去除显示的悬浮按钮
+ */
+export function notifyClearActions() {
+    runScriptOnAllTabs(function (tab) {
+        chrome.tabs.sendMessage(tab.id,
+            {
+                cmd: 'clear_actions'
+            },
+            function (response) {
+                // Check for errors when sending message to tabs
+                if (chrome.runtime.lastError) {
+                    console.warn(`Error sending 'clear_actions' to tab ${tab.id}: ${chrome.runtime.lastError.message}`);
+                } else {
+                    // Optional: Log success or response if needed
+                    // console.log(`'clear_actions' sent to tab ${tab.id}, response:`, response);
+                }
+            });
+    });
+}

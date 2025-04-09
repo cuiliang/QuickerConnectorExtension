@@ -1,16 +1,10 @@
 "use strict";
 
-import { 
-  MSG_UPDATE_QUICKER_STATE, 
-  MSG_REGISTER_CONTEXT_MENU, 
-  MSG_PUSH_ACTIONS,
-  MSG_MENU_CLICK,
-  MSG_REPORT_ACTIVE_TAB_STATE
-} from './constants.js';
-import { sendReplyToQuicker, reportUrlChange } from './messaging.js';
-import { setupActionsForAllTabs, runScriptOnTab, executeOnTab, runScriptOnAllTabs } from './tabs.js';
-import { updateConnectionState } from './ui.js';
-import { isChromeTabUrl } from './utils.js';
+import {MSG_PUSH_ACTIONS, MSG_REGISTER_CONTEXT_MENU, MSG_UPDATE_QUICKER_STATE} from './constants.js';
+import {executeOnTab, runScriptOnAllTabs, runScriptOnTab, setupActionsForAllTabs} from './tabs.js';
+import {updateConnectionState} from './ui.js';
+import {isChromeTabUrl} from './utils.js';
+import {reportUrlChange, sendReplyToQuicker} from "./connection.js";
 
 /**
  * 处理Quicker命令
@@ -181,23 +175,6 @@ function onMessageRegisterContextMenu(msg) {
       console.log("No context menu items provided to register.");
     }
   });
-}
-
-/**
- * 右键菜单被点击了
- * @param {object} info 点击信息
- * @param {object} tab 标签页信息
- */
-export function menuItemClicked(info, tab) {
-  console.log('menu clicked:', info, tab);
-
-  if (!self.state._isQuickerConnected) {
-    console.warn('尚未连接到Quicker！');
-    return;
-  }
-
-  const data = { info, tab };
-  sendReplyToQuicker(true, "menu clicked", data, 0, MSG_MENU_CLICK);
 }
 
 /**

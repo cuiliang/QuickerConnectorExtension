@@ -1,7 +1,7 @@
 "use strict";
 
-import { sendReplyToQuicker } from './messaging.js';
 import { executeOnTab } from './tabs.js';
+import {sendReplyToQuicker} from "./connection.js";
 
 /**
  * 获取某个URL的cookie

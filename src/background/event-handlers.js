@@ -1,13 +1,11 @@
 "use strict";
 
-import { reportUrlChange, sendReplyToQuicker } from './messaging.js';
-import { setupActionsForTab } from './tabs.js';
-import { onButtonPositionChanged, resetButtonPosition, updateUi } from './ui.js';
-import { loadSettings } from './settings.js';
-import { MSG_START_PICKER, MSG_MENU_CLICK } from './constants.js';
-import { menuItemClicked } from './message-handler.js';
-import { sendMessageToQuicker } from './connection.js';
-import { getBrowserName } from './utils.js';
+import {setupActionsForTab} from './tabs.js';
+import {onButtonPositionChanged, resetButtonPosition, updateUi} from './ui.js';
+import {loadSettings} from './settings.js';
+import {MSG_MENU_CLICK, MSG_START_PICKER} from './constants.js';
+import {reportUrlChange, sendMessageToQuicker, sendReplyToQuicker} from './connection.js';
+import {getBrowserName} from './utils.js';
 
 // Note: This module uses global window.state extensively.
 // Consider refactoring for better state management.
@@ -77,6 +75,23 @@ export function setupReports() {
 }
 
 /**
+ * 右键菜单被点击了
+ * @param {object} info 点击信息
+ * @param {object} tab 标签页信息
+ */
+export function menuItemClicked(info, tab) {
+  console.log('menu clicked:', info, tab);
+
+  if (!self.state._isQuickerConnected) {
+    console.warn('尚未连接到Quicker！');
+    return;
+  }
+
+  const data = {info, tab};
+  sendReplyToQuicker(true, "menu clicked", data, 0, MSG_MENU_CLICK);
+}
+
+/**
  * 注册右键菜单点击事件监听
  */
 export function setupContextMenuListener() {
@@ -116,21 +131,23 @@ export function setupMessageListener() {
       case 'send_to_quicker':
         {
           isAsync = true; // sendMessageToQuicker involves async native messaging
-          // 转发消息给Quicker
-          const manifest = chrome.runtime.getManifest();
-          const _version = manifest.version;
-          const _browser = getBrowserName(); // Use imported function
 
-          const msg = Object.assign({}, {
-            "messageType": 0,
-            "isSuccess": true,
-            "replyTo": 0,
-            "message": '',
-            "version": _version,
-            "browser": _browser
-          }, messageFromContentOrPopup.data);
+          // // 转发消息给Quicker
+          // const manifest = chrome.runtime.getManifest();
+          // const _version = manifest.version;
+          // const _browser = getBrowserName(); // Use imported function
+          //
+          // const msg = Object.assign({}, {
+          //   "messageType": 0,
+          //   "isSuccess": true,
+          //   "replyTo": 0,
+          //   "message": ''
+          // }, messageFromContentOrPopup.data);
+          //
+          // sendMessageToQuicker(msg); // Use imported function
 
-          sendMessageToQuicker(msg); // Use imported function
+          sendMessageToQuicker(messageFromContentOrPopup.data);
+
           // Native messaging doesn't have a direct callback for success/failure here.
           // We respond immediately, assuming the message was posted to the host.
           sendResponse({ status: 'Message forwarded to Quicker' });
@@ -150,8 +167,6 @@ export function setupMessageListener() {
             "isSuccess": true,
             "replyTo": 0,
             "message": '',
-            "version": _version,
-            "browser": _browser,
             "data": messageFromContentOrPopup.data
           };
 
