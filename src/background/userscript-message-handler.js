@@ -60,7 +60,7 @@ function handleUserScriptMessage(message, sender, sendResponse) {
 /**
  * Sets up listeners for messages and connections related to User Scripts.
  */
-export function setupUserScriptHandlers() {
+export function setupUserScriptMessageHandlers() {
     _log('Setting up User Script message listeners...');
 
     chrome.userScripts.configureWorld({

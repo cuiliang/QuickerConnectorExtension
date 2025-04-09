@@ -9,11 +9,12 @@
 import { getBrowserName } from './utils.js';
 import { connect} from './connection.js';
 import { loadSettings } from './settings.js';
-import { setupReports, setupContextMenuListener, setupMessageListener } from './event-handlers.js';
+import { setupReports, setupContextMenuListener } from './event-handlers.js';
 import { updateConnectionState } from './ui.js';
 import { installToExistingTabs } from './tabs.js';
 import { DEFAULT_BUTTON_POSITION } from './constants.js';
-import { setupUserScriptHandlers } from './userscript-message-handler.js';
+import { setupUserScriptMessageHandlers } from './userscript-message-handler.js';
+import { setupExtensionMessageHandler } from "./extension-message-handler.js";
 
 // 初始化浏览器信息
 self.browserInfo = {
@@ -52,8 +53,8 @@ loadSettings();
 // 设置事件监听
 setupReports();
 setupContextMenuListener();
-setupMessageListener();
-setupUserScriptHandlers();
+setupExtensionMessageHandler();
+setupUserScriptMessageHandlers();
 
 // 启动时重新连接
 chrome.runtime.onStartup.addListener(function () {
