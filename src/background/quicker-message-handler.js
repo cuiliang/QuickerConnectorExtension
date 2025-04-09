@@ -1,6 +1,6 @@
 "use strict";
 
-import {MSG_PUSH_ACTIONS, MSG_REGISTER_CONTEXT_MENU, MSG_UPDATE_QUICKER_STATE} from './constants.js';
+import {MSG_COMMAND_RESP, MSG_PUSH_ACTIONS, MSG_REGISTER_CONTEXT_MENU, MSG_UPDATE_QUICKER_STATE} from './constants.js';
 import {executeOnTab, runScriptOnAllTabs, runScriptOnTab, setupActionsForAllTabs} from './tabs.js';
 import {updateConnectionState} from './ui.js';
 import {isChromeTabUrl} from './utils.js';
@@ -11,108 +11,84 @@ import {reportUrlChange, sendReplyToQuicker} from "./connection.js";
  * @param {object} msg 命令消息
  */
 export function processQuickerCmd(msg) {
-  // 更新Quicker连接状态
-  if (msg.messageType === MSG_UPDATE_QUICKER_STATE) {
-    onMsgQuickerStateChange(msg);
-    return;
-  } 
-  // 注册右键菜单
-  else if (msg.messageType === MSG_REGISTER_CONTEXT_MENU) {
-    onMessageRegisterContextMenu(msg);
-    return;
-  } 
-  // 推送动作列表
-  else if (msg.messageType == MSG_PUSH_ACTIONS) {
-    onMessagePushActions(msg);
-    return;
+  let handler;
+  switch(msg.messageType){
+    case MSG_UPDATE_QUICKER_STATE:
+      handler = onMsgQuickerStateChange;
+      break;
+    case MSG_REGISTER_CONTEXT_MENU:
+       handler = onMessageRegisterContextMenu;
+       break;
+    case MSG_PUSH_ACTIONS:
+      handler = onMessagePushActions;
+      break;
+    default:
+      // 此时MessageType可能是0
+      handler = COMMAND_HANDLERS[msg.cmd];
+      break;
   }
 
-  try {
-    switch (msg.cmd) {
-      case "OpenUrl":
-        openUrl(msg);
-        break;
-      case "GetTabInfo":
-        getTabInfo(msg);
-        break;
-      case "CloseTab":
-        closeTab(msg);
-        break;
-      case "RunScript":
-        runScript(msg);
-        break;
-      case "BackgroundScript":
-        runBackgroundScript(msg);
-        break;
 
-      // cookies
-      case "GetCookiesByUrl":
-        getCookies(msg);
-        break;
-      case "RemoveCookiesByUrl":
-        removeCookiesByUrl(msg);
-        break;
-      // bookmarks
-      case "CreateBookmark":
-        createBookmark(msg);
-        break;
-      case "GetBookmarks":
-        getBookmarks(msg);
-        break;
-      case "SearchBookmarks":
-        searchBookmarks(msg);
-        break;
-      // browsingData
-      case "RemoveBrowsingData":
-        removeBrowsingData(msg);
-        break;
-      // topSites
-      case "GetTopSites":
-        getTopSites(msg);
-        break;
-      // downloads
-      case "DownloadFile":
-        downloadFile(msg);
-        break;
-      // history
-      case "DeleteAllHistory":
-        deleteAllHistory(msg);
-        break;
-      // 
-      case "SaveAsMHTML":
-        saveAsMHTML(msg);
-        break;
-      // sessions
-      case "GetRecentlyClosed":
-        getRecentlyClosed(msg);
-        break;
-      case "RestoreRecentClosedSession":
-        restoreRecentClosedSession(msg);
-        break;
-      // management
-      case "ManagementGetAll":
-        managementGetAll(msg);
-        break;
-      // send
-      case "SendDebuggerCommand":
-        sendDebuggerCommand(msg);
-        break;
-      case "CaptureFullPage":
-        captureFullPage(msg);
-        break;
-      case "Speek":
-        speekText(msg);
-        break;
-      default:
-        console.error("Unknown command:" + msg.cmd);
-        sendReplyToQuicker(false, "Unknown command:" + msg.cmd, {}, msg.serial);
-        break;
+  if (handler) {
+    try
+    {
+      handler(msg);
+    } catch (err)
+    {
+      console.error(err);
+      sendReplyToQuicker(false, err.message, err, msg.serial);
     }
-  } catch (err) {
-    console.error(err);
-    sendReplyToQuicker(false, err.message, err, msg.serial);
+  } else {
+    console.error("Unknown command:", msg);
+    sendReplyToQuicker(false, "Unknown command:" + msg.cmd, {}, msg.serial);
   }
 }
+
+
+
+/**
+ * Map of command names to their handler functions
+ */
+const COMMAND_HANDLERS = {
+  // Tab related commands
+  "OpenUrl": openUrl,
+  "GetTabInfo": getTabInfo,
+  "CloseTab": closeTab,
+
+  // Script execution
+  "RunScript": runScript,
+  "BackgroundScript": runBackgroundScript,
+
+  // Cookie management
+  "GetCookiesByUrl": getCookies,
+  "RemoveCookiesByUrl": removeCookiesByUrl,
+
+  // Bookmark operations
+  "CreateBookmark": createBookmark,
+  "GetBookmarks": getBookmarks,
+  "SearchBookmarks": searchBookmarks,
+
+  // Browsing data
+  "RemoveBrowsingData": removeBrowsingData,
+
+  // Various browser features
+  "GetTopSites": getTopSites,
+  "DownloadFile": downloadFile,
+  "DeleteAllHistory": deleteAllHistory,
+  "SaveAsMHTML": saveAsMHTML,
+
+  // Session management
+  "GetRecentlyClosed": getRecentlyClosed,
+  "RestoreRecentClosedSession": restoreRecentClosedSession,
+
+  // Extension management
+  "ManagementGetAll": managementGetAll,
+
+  // Miscellaneous
+  "SendDebuggerCommand": sendDebuggerCommand,
+  "CaptureFullPage": captureFullPage,
+  "Speek": speekText,
+};
 
 /**
  * Quicker 连接状态变化了
