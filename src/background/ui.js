@@ -61,6 +61,18 @@ export function updateUi() {
 			console.warn("Error sending update_popup_ui message:", error);
 		}
 	});
+
+
+	if (!self.state._isHostConnected) {
+		chrome.action.setBadgeText({ text: "×" });
+		chrome.action.setBadgeBackgroundColor({ color: '#ff0000' });
+	} else if (!self.state._isQuickerConnected) {
+		chrome.action.setBadgeText({ text: "×" });
+		chrome.action.setBadgeBackgroundColor({ color: 'rgb(255, 174, 0)' });
+	}
+	else {
+		chrome.action.setBadgeText({ text: '' });
+	}
 }
 
 /**
