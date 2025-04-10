@@ -5,6 +5,16 @@ import {executeOnTab, runScriptOnAllTabs, runScriptOnTab, setupActionsForAllTabs
 import {updateConnectionState} from './ui.js';
 import {isChromeTabUrl} from './utils.js';
 import {reportUrlChange, sendReplyToQuicker} from "./connection.js";
+import {
+  createBookmark, deleteAllHistory,
+  downloadFile,
+  getBookmarks, getRecentlyClosed,
+  getTopSites, managementGetAll,
+  removeBrowsingData, restoreRecentClosedSession, saveAsMHTML,
+  searchBookmarks, sendDebuggerCommand, speekText
+} from "./api-functions.js";
+
+import {runBackgroundCommand} from "./background-commands.js";
 
 /**
  * 处理Quicker命令
@@ -58,6 +68,7 @@ const COMMAND_HANDLERS = {
   // Script execution
   "RunScript": runScript,
   "BackgroundScript": runBackgroundScript,
+  "BackgroundCommand": runBackgroundCommand,  //MV3中因为无法执行eval.call，因此需要使用新的方式执行预定义的后台脚本。
 
   // Cookie management
   "GetCookiesByUrl": getCookies,

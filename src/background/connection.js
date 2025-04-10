@@ -224,7 +224,8 @@ function sendHelloMessage() {
       message: "Hello!",
       browser: _browser,
       version: _version,
-      isSuccess: true
+      isSuccess: true,
+      manifestVersion: manifest.manifest_version
     });
   } catch (e) {
     console.error(e);
