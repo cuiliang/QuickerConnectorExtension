@@ -280,28 +280,9 @@ function closeTab(msg) {
  * @param {object} msg 消息对象
  */
 function runBackgroundScript(msg) {
-  // 脚本内容
-  const script = msg.data.script;
 
-  // 将消息序号写入全局变量
-  self.qk_msg_serial = msg.serial;
+  sendReplyToQuicker(false, "浏览器已不再支持执行自定义后台脚本", {}, msg.serial);
 
-  // 重置结果变量
-  self.qk_bgmsg_result = undefined;
-
-  try {
-    eval.call(self, script);
-
-    // 后台脚本中如果不含有返回结果的代码，则直接返回。否则由后台脚本返回结果。
-    if (!script.includes("sendReplyToQuicker(")) {
-      // 读取后台脚本为qk_bgmsg_result的复制
-      const result = self.qk_bgmsg_result || {};
-      sendReplyToQuicker(true, "ok", result, msg.serial);
-    }
-  } catch (e) {
-    console.error('后台脚本错误：', e);
-    sendReplyToQuicker(false, e.message, e, msg.serial);
-  }
 }
 
 /**
