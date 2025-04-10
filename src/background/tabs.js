@@ -164,6 +164,12 @@ export function executeOnTab(msg, func) {
  * @param {object} msg 消息对象
  */
 export function runScriptOnTab(tabId, script, msg) {
+
+  if (!isUserScriptsAvailable()) {
+    sendReplyToQuicker(false, "执行动态脚本需要开启浏览器的开发者模式.", {}, msg.serial);
+    return;
+  }
+
   const allFrames = msg.data.allFrames === undefined ? true : msg.data.allFrames;
   const frameId = msg.data.frameId;
   const waitManualReturn = msg.data.waitManualReturn;
@@ -280,3 +286,22 @@ export function notifyClearActions() {
             });
     });
 }
+
+
+
+//# region 辅助代码
+
+// 判断是否支持userScripts
+function isUserScriptsAvailable() {
+  try {
+    // Property access which throws if developer mode is not enabled.
+    chrome.userScripts;
+    return true;
+  } catch {
+    // Not available.
+    return false;
+  }
+}
+
+
+//# endregion

@@ -38,12 +38,6 @@ export function setupReports() {
       }
     }
 
-    // Also check if actions need to be updated when a tab finishes loading
-    if (changeInfo.status === 'complete' && tab.url) {
-        // Consider delaying slightly if content script might not be ready immediately
-        // setTimeout(() => setupActionsForTab(tab), 100);
-        setupActionsForTab(tab);
-    }
   });
 
   // 窗口焦点改变事件
