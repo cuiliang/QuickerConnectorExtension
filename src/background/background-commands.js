@@ -1,5 +1,19 @@
 import { sendReplyToQuicker } from "./connection.js";
 
+// 引入所有API
+import * as browsingData from "./api/browsingData.js";
+import * as cookies from "./api/cookies.js";
+import * as debugger_api from "./api/debugger.js";
+import * as downloads from "./api/downloads.js";
+import * as history from "./api/history.js";
+import * as management from "./api/management.js";
+import * as pageCapture from "./api/pageCapture.js";
+import * as readingList from "./api/readingList.js";
+import * as tabGroups from "./api/tabGroups.js";
+import * as tabs from "./api/tabs.js";
+import * as tts from "./api/tts.js";
+import * as windows from "./api/windows.js";
+
 /**
  * 因为MV3中无法执行eval.call，因此需要使用新的方式执行预定义的后台脚本。
  * 每个命令包含：
@@ -51,6 +65,136 @@ const BG_COMMAND_HANDLERS = {
   'qk_get_bookmarks': qk_get_bookmarks,
   'qk_query_history': qk_query_history,
   'qk_delete_bookmark': qk_delete_bookmark,
+  
+  // browsingData API
+  'api_browsingData_remove': browsingData.remove,
+  'api_browsingData_removeAppcache': browsingData.removeAppcache,
+  'api_browsingData_removeCache': browsingData.removeCache,
+  'api_browsingData_removeCookies': browsingData.removeCookies,
+  'api_browsingData_removeDownloads': browsingData.removeDownloads,
+  'api_browsingData_removeFileSystems': browsingData.removeFileSystems,
+  'api_browsingData_removeFormData': browsingData.removeFormData,
+  'api_browsingData_removeHistory': browsingData.removeHistory,
+  'api_browsingData_removeIndexedDB': browsingData.removeIndexedDB,
+  'api_browsingData_removeLocalStorage': browsingData.removeLocalStorage,
+  'api_browsingData_removePasswords': browsingData.removePasswords,
+  'api_browsingData_removePluginData': browsingData.removePluginData,
+  'api_browsingData_removeServiceWorkers': browsingData.removeServiceWorkers,
+  'api_browsingData_removeWebSQL': browsingData.removeWebSQL,
+  'api_browsingData_settings': browsingData.settings,
+  
+  // cookies API
+  'api_cookies_get': cookies.get,
+  'api_cookies_getAll': cookies.getAll,
+  'api_cookies_set': cookies.set,
+  'api_cookies_remove': cookies.remove,
+  'api_cookies_getAllCookieStores': cookies.getAllCookieStores,
+  
+  // debugger API
+  'api_debugger_attach': debugger_api.attach,
+  'api_debugger_detach': debugger_api.detach,
+  'api_debugger_sendCommand': debugger_api.sendCommand,
+  'api_debugger_getTargets': debugger_api.getTargets,
+  
+  // downloads API
+  'api_downloads_download': downloads.download,
+  'api_downloads_search': downloads.search,
+  'api_downloads_pause': downloads.pause,
+  'api_downloads_resume': downloads.resume,
+  'api_downloads_cancel': downloads.cancel,
+  'api_downloads_erase': downloads.erase,
+  'api_downloads_removeFile': downloads.removeFile,
+  'api_downloads_open': downloads.open,
+  'api_downloads_show': downloads.show,
+  'api_downloads_showDefaultFolder': downloads.showDefaultFolder,
+  'api_downloads_getDangerousTypes': downloads.getDangerousTypes,
+  'api_downloads_getFileIcon': downloads.getFileIcon,
+  'api_downloads_setShelfEnabled': downloads.setShelfEnabled,
+  
+  // history API
+  'api_history_search': history.search,
+  'api_history_getVisits': history.getVisits,
+  'api_history_addUrl': history.addUrl,
+  'api_history_deleteUrl': history.deleteUrl,
+  'api_history_deleteRange': history.deleteRange,
+  'api_history_deleteAll': history.deleteAll,
+  
+  // management API
+  'api_management_getAll': management.getAll,
+  'api_management_get': management.get,
+  'api_management_getSelf': management.getSelf,
+  'api_management_getPermissionWarningsById': management.getPermissionWarningsById,
+  'api_management_getPermissionWarningsByManifest': management.getPermissionWarningsByManifest,
+  'api_management_setEnabled': management.setEnabled,
+  'api_management_uninstall': management.uninstall,
+  'api_management_uninstallSelf': management.uninstallSelf,
+  'api_management_launchApp': management.launchApp,
+  'api_management_createAppShortcut': management.createAppShortcut,
+  'api_management_setLaunchType': management.setLaunchType,
+  'api_management_generateAppForLink': management.generateAppForLink,
+  
+  // pageCapture API
+  'api_pageCapture_saveAsMHTML': pageCapture.saveAsMHTML,
+  
+  // readingList API
+  'api_readingList_add': readingList.add,
+  'api_readingList_getEntries': readingList.getEntries,
+  'api_readingList_getEntry': readingList.getEntry,
+  'api_readingList_remove': readingList.remove,
+  'api_readingList_update': readingList.update,
+  
+  // tabGroups API
+  'api_tabGroups_get': tabGroups.get,
+  'api_tabGroups_create': tabGroups.create,
+  'api_tabGroups_update': tabGroups.update,
+  'api_tabGroups_move': tabGroups.move,
+  'api_tabGroups_query': tabGroups.query,
+  'api_tabGroups_remove': tabGroups.remove,
+  
+  // tabs API
+  'api_tabs_create': tabs.create,
+  'api_tabs_get': tabs.get,
+  'api_tabs_query': tabs.query,
+  'api_tabs_update': tabs.update,
+  'api_tabs_move': tabs.move,
+  'api_tabs_reload': tabs.reload,
+  'api_tabs_duplicate': tabs.duplicate,
+  'api_tabs_sendMessage': tabs.sendMessage,
+  'api_tabs_remove': tabs.remove,
+  'api_tabs_group': tabs.group,
+  'api_tabs_ungroup': tabs.ungroup,
+  'api_tabs_discard': tabs.discard,
+  'api_tabs_executeScript': tabs.executeScript,
+  'api_tabs_insertCSS': tabs.insertCSS,
+  'api_tabs_removeCSS': tabs.removeCSS,
+  'api_tabs_setZoom': tabs.setZoom,
+  'api_tabs_getZoom': tabs.getZoom,
+  'api_tabs_setZoomSettings': tabs.setZoomSettings,
+  'api_tabs_getZoomSettings': tabs.getZoomSettings,
+  'api_tabs_highlight': tabs.highlight,
+  'api_tabs_captureVisibleTab': tabs.captureVisibleTab,
+  'api_tabs_detectLanguage': tabs.detectLanguage,
+  'api_tabs_toggleMuteState': tabs.toggleMuteState,
+  'api_tabs_getSelected': tabs.getSelected,
+  'api_tabs_getCurrent': tabs.getCurrent,
+  
+  
+  // tts API
+  'api_tts_speak': tts.speak,
+  'api_tts_stop': tts.stop,
+  'api_tts_pause': tts.pause,
+  'api_tts_resume': tts.resume,
+  'api_tts_isSpeaking': tts.isSpeaking,
+  'api_tts_getVoices': tts.getVoices,
+  
+  // windows API
+  'api_windows_create': windows.create,
+  'api_windows_get': windows.get,
+  'api_windows_getAll': windows.getAll,
+  'api_windows_getCurrent': windows.getCurrent,
+  'api_windows_getLastFocused': windows.getLastFocused,
+  'api_windows_remove': windows.remove,
+  'api_windows_update': windows.update,
 }
 
 //////////////////////////////////////////////////command handlers/////////////////////////////////////////////////////////////////////
