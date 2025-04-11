@@ -233,46 +233,37 @@ function openUrl(msg) {
  * 获得标签信息
  * @param {object} msg 消息对象
  */
-function getTabInfo(msg) {
+/**
+ * 获得标签信息
+ * @param {object} msg 消息对象
+ */
+async function getTabInfo(msg) {
   const tabId = msg.tabId;
-  if (!tabId) {
-    // 未提供tab的时候，使用当前焦点tab
-    chrome.tabs.query({ lastFocusedWindow: true, active: true }, function (tabs) {
-      if (tabs.length < 1) {
-        sendReplyToQuicker(false, "Can not find active tab.", {}, msg.serial);
-        return;
-      }
-      const tab = tabs[0];
-      console.log('GetTabInfo', tabId, tab);
-      sendReplyToQuicker(true, "", tab, msg.serial);
-    });
-    return;
-  }
-
-  // 获得tab信息
-  chrome.tabs.get(tabId, function (tab) {
+  try {
+    const tab = await getTargetTab(tabId);
     console.log('GetTabInfo', tabId, tab);
     sendReplyToQuicker(true, "", tab, msg.serial);
-    return;
-  });
+    
+  } catch (error) {
+    console.error('获取标签信息出错:', error);
+    sendReplyToQuicker(false, `获取标签信息失败: ${error.message}`, {}, msg.serial);
+  }
 }
 
 /**
  * 关闭标签
  * @param {object} msg 消息对象
  */
-function closeTab(msg) {
-  executeOnTab(msg, function (tabId, msg) {
-    console.log("Closing tab", tabId);
-    chrome.tabs.remove(tabId, function () {
-      if (chrome.runtime.lastError) {
-        console.warn("Error closing tab:", tabId, chrome.runtime.lastError.message);
-        sendReplyToQuicker(false, `Error closing tab: ${chrome.runtime.lastError.message}`, null, msg.serial);
-      } else {
-        sendReplyToQuicker(true, "Tab closed.", { tabId: tabId }, msg.serial);
-      }
-    });
-  });
+async function closeTab(msg) {
+  const tabId = msg.tabId;
+  try {
+    const tab = await getTargetTab(tabId);
+    await chrome.tabs.remove(tab.id);
+    sendReplyToQuicker(true, "ok", {}, msg.serial);
+  } catch (error) {
+    console.error('关闭标签出错:', error);
+    sendReplyToQuicker(false, `关闭标签出错: ${error.message}`, {}, msg.serial);
+  }
 }
 
 /**
@@ -289,29 +280,39 @@ function runBackgroundScript(msg) {
  * 执行脚本
  * @param {object} msg 消息对象
  */
-function runScript(msg) {
+async function runScript(msg) {
   const tabId = msg.tabId;
   const script = msg.data.script;
 
-  console.log('running script on tab:', msg.data);
+  console.log('running script on tab:',tabId, msg.data);
 
-  if (!tabId) {
-    chrome.tabs.query({ lastFocusedWindow: true, active: true }, function (tabs) {
-			if (tabs.length < 1) {
-				sendReplyToQuicker(false, "Can not find active tab.", {}, msg.serial);
-				return;
-			}
-
-			if (isChromeTabUrl(tabs[0].url)) {
-				sendReplyToQuicker(false, "Can not run on this page.", {}, msg.serial)
-			} else {
-				runScriptOnTab(tabs[0].id, script, msg);
-			}
-
-		});
-  } else {
-    runScriptOnTab(tabId, script, msg);
+  try{
+    const tab = await getTargetTab(tabId);
+    runScriptOnTab(tab.id, script, msg);
+  } catch (error) {
+    console.error('执行脚本出错:', error);
+    sendReplyToQuicker(false, `执行脚本出错: ${error.message}`, {}, msg.serial);
   }
+
+  
+
+  // if (!tabId) {
+  //   chrome.tabs.query({ lastFocusedWindow: true, active: true }, function (tabs) {
+	// 		if (tabs.length < 1) {
+	// 			sendReplyToQuicker(false, "Can not find active tab.", {}, msg.serial);
+	// 			return;
+	// 		}
+
+	// 		if (isChromeTabUrl(tabs[0].url)) {
+	// 			sendReplyToQuicker(false, "Can not run on this page.", {}, msg.serial)
+	// 		} else {
+	// 			runScriptOnTab(tabs[0].id, script, msg);
+	// 		}
+
+	// 	});
+  // } else {
+  //   runScriptOnTab(tabId, script, msg);
+  // }
 }
 
 // 其他API功能函数的实现...
@@ -353,3 +354,23 @@ function captureFullPage(msg) {
     sendReplyToQuicker(true, "", "", msg.serial);
   });
 } 
+
+
+
+/**
+ * 获取目标标签
+ * @param {string} tabId 标签ID，如果未提供，则使用当前焦点tab
+ * @returns {Promise<Object>} 标签信息
+ */
+async function getTargetTab(tabId) {
+  if (tabId) {
+    return await chrome.tabs.get(tabId);
+  } else {
+    // 未提供tab的时候，使用当前焦点tab
+    const tabs = await chrome.tabs.query({ lastFocusedWindow: true, active: true });
+    if (tabs.length < 1) {
+      throw new Error("Can not find active tab.");
+    }
+    return tabs[0];
+  }
+}
