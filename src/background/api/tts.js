@@ -94,7 +94,7 @@ async function getVoices() {
   return await chrome.tts.getVoices();
 }
 
-module.exports = {
+export {
   speak,
   stop,
   pause,

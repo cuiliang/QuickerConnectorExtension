@@ -1,8 +1,8 @@
 "use strict";
 
-import {isChromeTabUrl, isUrlMatch} from './utils.js';
+import { isChromeTabUrl, isUrlMatch } from './utils.js';
 
-import {sendReplyToQuicker} from "./connection.js";
+import { sendReplyToQuicker } from "./connection.js";
 
 /**
  * 与浏览器标签页的交互
@@ -110,25 +110,25 @@ export function setupActionsForTab(tab, position) {
 
   if (actionsForTab.length > 0) {
 
-		chrome.tabs.sendMessage(tab.id,
-			{
-				cmd: 'setup_actions',
-				actions: actionsForTab,
-				menuIcon: _menuIcon,
-				menuButtonBgColor: _menuButtonBgColor,
-				position: _buttonPosition
-			},
-			function (response) {
-			});
-	} else {
-		// 如果之前显示了动作，则通知其清除
-		chrome.tabs.sendMessage(tab.id,
-			{
-				cmd: 'clear_actions'
-			},
-			function (response) {
-			});
-	}
+    chrome.tabs.sendMessage(tab.id,
+      {
+        cmd: 'setup_actions',
+        actions: actionsForTab,
+        menuIcon: _menuIcon,
+        menuButtonBgColor: _menuButtonBgColor,
+        position: _buttonPosition
+      },
+      function (response) {
+      });
+  } else {
+    // 如果之前显示了动作，则通知其清除
+    chrome.tabs.sendMessage(tab.id,
+      {
+        cmd: 'clear_actions'
+      },
+      function (response) {
+      });
+  }
 }
 
 /**
@@ -163,41 +163,43 @@ export function executeOnTab(msg, func) {
  * @param {string} script 要执行的脚本
  * @param {object} msg 消息对象
  */
-export function runScriptOnTab(tabId, script, msg) {
+export async function runScriptOnTab(tabId, script, msg) {
 
   if (!isUserScriptsAvailable()) {
     sendReplyToQuicker(false, "执行动态脚本需要开启浏览器的开发者模式.", {}, msg.serial);
     return;
   }
 
-  const allFrames = msg.data.allFrames === undefined ? true : msg.data.allFrames;
+  const allFrames = msg.data.allFrames === undefined ? false : msg.data.allFrames;
   const frameId = msg.data.frameId;
   const waitManualReturn = msg.data.waitManualReturn;
 
-  const world = msg.data.world || 'USER_SCRIPT';
 
-  const code = waitManualReturn
-    ? script.replace('qk_msg_serial', msg.serial)  // Inject serial for manual reply
-    : script;
-
-  const details = {
-    code: code,
-    allFrames: allFrames
-  };
-
-  if (frameId !== undefined && frameId !== null) { // Ensure frameId is valid if provided
-    details.frameId = frameId;
-    // When targeting a specific frame, allFrames should typically be false, but follow input if specified.
-    // details.allFrames = false; // Consider forcing this if frameId is present
+  let world = undefined;
+  let wordId = undefined;
+  if (msg.data.world) {
+    if (msg.data.world === 'MAIN') {
+      world = 'MAIN';
+    } else if (msg.data.world === 'USER_SCRIPT') {
+      world = 'USER_SCRIPT';
+    } else {
+      wordId = msg.data.wordId;
+    }
   }
 
-  const target = { 
-    tabId: tabId, 
-    allFrames: details.allFrames, 
-    frameIds: details.frameId ? [details.frameId] : undefined 
+
+  const code = waitManualReturn
+      ? script.replace('qk_msg_serial', msg.serial)  // Inject serial for manual reply
+      : script;
+
+
+  const target = {
+    tabId: tabId,
+    allFrames: allFrames,
+    frameIds: frameId ? [frameId] : undefined
   };
 
-  
+
   const scriptSource = [];
   // 检查脚本是否包含'quicker'关键字
   if (code.includes('quicker')) {
@@ -212,7 +214,7 @@ export function runScriptOnTab(tabId, script, msg) {
       file: './libs/jquery-3.6.0.min.js'
     });
   }
-  
+
   // 检查脚本是否使用了_x函数
   if (code.includes('_x(')) {
     scriptSource.push({
@@ -233,58 +235,69 @@ function _x(STR_XPATH) {
 }`
     });
   }
-  
+
   // 添加用户脚本代码
   scriptSource.push({
     code: code
   });
-  
 
 
-  //
-  chrome.userScripts.execute({
-    js: scriptSource,
-    target: target,
-    world: world // MAIN, USER_SCRIPT.
-  }, 
-    
-    function(result){
-      //result: InjectionResult[]
-      if (chrome.runtime.lastError
-				&& chrome.runtime.lastError.message.includes("result is non-structured-clonable data") === false) {
-				console.warn('execute tab script error:', chrome.runtime.lastError)
-				sendReplyToQuicker(false, chrome.runtime.lastError.message, result, msg.serial);
-			} else {
-				console.log('run script result:', result);
+  try {
+    // https://developer.chrome.com/docs/extensions/reference/api/userScripts#method-execute
+    let result = await chrome.userScripts.execute({
+      js: scriptSource,
+      target: target,
+      world: world // MAIN, USER_SCRIPT.
+    });
 
-				// 如果需要等待手动响应，则不直接返回脚本结果，而是等待脚本返回
-				if (!waitManualReturn) {
-					sendReplyToQuicker(true, "", result, msg.serial);
-				}
-			}
-  })
 
+    if (chrome.runtime.lastError
+        && chrome.runtime.lastError.message.includes("result is non-structured-clonable data") === false) {
+      console.warn('execute tab script error:', chrome.runtime.lastError)
+      sendReplyToQuicker(false, chrome.runtime.lastError.message, result, msg.serial);
+    } else {
+      console.log('run script result:', result);
+
+      // 如果需要等待手动响应，则不直接返回脚本结果，而是等待脚本返回
+      if (!waitManualReturn) {
+        
+        // 处理InjectionResult数组，提取每一项的result属性或error信息。此处用于兼容MV2的tabs.executeScript的结果格式。
+        const returnResult = result.map(item => {
+          if (item.error) {
+            return 'Error:' + item.error;
+          } else {
+            return item.result;
+          }
+        });
+
+        sendReplyToQuicker(true, "", returnResult, msg.serial);
+      }
+    }
+  } catch (error) {
+    console.warn('execute tab script error:', error)
+    sendReplyToQuicker(false, error.message, {}, msg.serial);
+  }
 }
 
 /**
  * 通知标签页，端口已经断开，去除显示的悬浮按钮
  */
 export function notifyClearActions() {
-    runScriptOnAllTabs(function (tab) {
-        chrome.tabs.sendMessage(tab.id,
-            {
-                cmd: 'clear_actions'
-            },
-            function (response) {
-                // Check for errors when sending message to tabs
-                if (chrome.runtime.lastError) {
-                    console.warn(`Error sending 'clear_actions' to tab ${tab.id}: ${chrome.runtime.lastError.message}`);
-                } else {
-                    // Optional: Log success or response if needed
-                    // console.log(`'clear_actions' sent to tab ${tab.id}, response:`, response);
-                }
-            });
-    });
+  runScriptOnAllTabs(function (tab) {
+    chrome.tabs.sendMessage(tab.id,
+      {
+        cmd: 'clear_actions'
+      },
+      function (response) {
+        // Check for errors when sending message to tabs
+        if (chrome.runtime.lastError) {
+          console.warn(`Error sending 'clear_actions' to tab ${tab.id}: ${chrome.runtime.lastError.message}`);
+        } else {
+          // Optional: Log success or response if needed
+          // console.log(`'clear_actions' sent to tab ${tab.id}, response:`, response);
+        }
+      });
+  });
 }
 
 

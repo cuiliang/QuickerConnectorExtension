@@ -71,7 +71,7 @@ async function updateEntry(commandParams) {
   return await chrome.readingList.updateEntry(id, { hasBeenRead });
 }
 
-module.exports = {
+export {
   addEntry,
   removeEntry,
   getEntries,

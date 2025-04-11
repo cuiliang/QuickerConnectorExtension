@@ -234,7 +234,7 @@ async function setShelfEnabled(commandParams) {
   return await chrome.downloads.setShelfEnabled(enabled);
 }
 
-module.exports = {
+export {
   download,
   search,
   pause,

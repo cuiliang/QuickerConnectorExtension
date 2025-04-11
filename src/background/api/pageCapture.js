@@ -15,6 +15,6 @@ async function saveAsMHTML(commandParams) {
   return await chrome.pageCapture.saveAsMHTML({ tabId });
 }
 
-module.exports = {
+export {
   saveAsMHTML
 }; 

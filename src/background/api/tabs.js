@@ -399,7 +399,7 @@ async function getCurrent() {
   return await chrome.tabs.getCurrent();
 }
 
-module.exports = {
+export {
   create,
   get,
   query,

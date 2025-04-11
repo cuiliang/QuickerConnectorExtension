@@ -93,7 +93,7 @@ async function deleteAll() {
   return await chrome.history.deleteAll();
 }
 
-module.exports = {
+export {
   search,
   getVisits,
   addUrl,

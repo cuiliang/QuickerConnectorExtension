@@ -161,7 +161,7 @@ async function update(commandParams) {
   return await chrome.windows.update(windowId, updateInfo);
 }
 
-module.exports = {
+export {
   create,
   get,
   getAll,

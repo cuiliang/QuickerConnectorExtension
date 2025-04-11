@@ -154,7 +154,7 @@ async function generateAppForLink(commandParams) {
   return await chrome.management.generateAppForLink(id, options);
 }
 
-module.exports = {
+export {
   getAll,
   get,
   getSelf,

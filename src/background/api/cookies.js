@@ -115,7 +115,7 @@ async function getAllCookieStores() {
   return await chrome.cookies.getAllCookieStores();
 }
 
-module.exports = {
+export {
   get,
   getAll,
   set,

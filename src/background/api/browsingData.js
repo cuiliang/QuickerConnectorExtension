@@ -214,7 +214,7 @@ async function settings() {
   return await chrome.browsingData.settings();
 }
 
-module.exports = {
+export {
   remove,
   removeAppcache,
   removeCache,

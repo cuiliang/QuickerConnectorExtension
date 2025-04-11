@@ -19,6 +19,6 @@ async function get() {
   return await chrome.topSites.get();
 }
 
-module.exports = {
+export {
   get
 }; 

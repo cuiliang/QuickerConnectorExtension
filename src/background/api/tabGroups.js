@@ -90,7 +90,7 @@ async function move(commandParams) {
   return await chrome.tabGroups.move(groupId, moveProperties);
 }
 
-module.exports = {
+export {
   get,
   query,
   update,

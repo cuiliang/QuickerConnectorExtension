@@ -67,7 +67,7 @@ async function getTargets() {
   return await chrome.debugger.getTargets();
 }
 
-module.exports = {
+export {
   attach,
   detach,
   sendCommand,
