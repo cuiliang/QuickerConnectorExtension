@@ -30,67 +30,59 @@
  */
 
 /**
- * 朗读文本
- * @param {Object} commandParams - 命令参数
- * @param {string} commandParams.utterance - 要朗读的文本
- * @param {TtsOptions} [commandParams.options] - 朗读选项
- * @returns {Promise<void>} 无返回值
+ * 使用指定的语音参数朗读文本。
+ * @param {Object} commandParams - 命令参数。
+ * @param {string} commandParams.utterance - 要朗读的文本字符串。
+ * @param {TtsOptions} [commandParams.options] - 可选。朗读选项对象，用于指定语音、语速、音调等。
+ * @returns {Promise<void>} 当朗读完成、被中断或取消时解析，如果发生错误则拒绝 (reject)。
  */
 async function speak(commandParams) {
   const { utterance, options } = commandParams;
-  return new Promise((resolve, reject) => {
-    chrome.tts.speak(utterance, {
-      ...options,
-      onEvent: function(event) {
-        if (event.type === 'end' || event.type === 'interrupted' || event.type === 'cancelled' || event.type === 'error') {
-          if (event.type === 'error') {
-            reject(new Error(event.errorMessage || '语音合成错误'));
-          } else {
-            resolve();
-          }
-        }
-      }
-    });
-  });
+  return await chrome.tts.speak(utterance, options);
 }
 
 /**
- * 停止朗读
- * @returns {Promise<void>} 无返回值
+ * 立即停止当前所有正在进行的朗读。
+ * @param {Object} [commandParams] - 命令参数（未使用）。
+ * @returns {Promise<void>} 操作完成时解析。
  */
-async function stop() {
-  return await chrome.tts.stop();
+function stop(commandParams) {
+  chrome.tts.stop();
 }
 
 /**
- * 暂停朗读
- * @returns {Promise<void>} 无返回值
+ * 暂停当前的朗读（如果正在进行）。
+ * @param {Object} [commandParams] - 命令参数（未使用）。
+ * @returns {Promise<void>} 操作完成时解析。
  */
-async function pause() {
-  return await chrome.tts.pause();
+function pause() {
+  return chrome.tts.pause();
 }
 
 /**
- * 恢复朗读
- * @returns {Promise<void>} 无返回值
+ * 如果朗读已暂停，则恢复朗读。
+ * @param {Object} [commandParams] - 命令参数（未使用）。
+ * @returns {Promise<void>} 操作完成时解析。
  */
-async function resume() {
-  return await chrome.tts.resume();
+function resume(commandParams) {
+  chrome.tts.resume();
 }
 
 /**
- * 是否正在朗读
- * @returns {Promise<boolean>} 返回是否正在朗读
+ * 检查当前是否有正在进行的朗读（包括暂停状态）。
+ * @param {Object} [commandParams] - 命令参数（未使用）。
+ * @returns {Promise<boolean>} 返回一个布尔值，true 表示正在朗读或暂停，false 表示空闲。
  */
 async function isSpeaking() {
   return await chrome.tts.isSpeaking();
 }
 
 /**
- * 获取所有可用的语音
- * @returns {Promise<TtsVoice[]>} 返回可用语音数组
+ * 获取浏览器支持的所有文本转语音引擎提供的可用语音列表。
+ * @param {Object} [commandParams] - 命令参数（未使用）。
+ * @returns {Promise<TtsVoice[]>} 返回一个包含 TtsVoice 对象的数组。
  */
-async function getVoices() {
+async function getVoices(commandParams) {
   return await chrome.tts.getVoices();
 }
 

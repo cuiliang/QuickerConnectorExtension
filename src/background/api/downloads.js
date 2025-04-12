@@ -84,78 +84,86 @@
  */
 
 /**
- * 下载
- * @param {Object} commandParams - 命令参数
- * @param {DownloadOptions} commandParams.options - 下载选项
- * @returns {Promise<number>} 返回下载项ID
+ * 开始一个新的下载。
+ * @param {DownloadOptions} commandParams - 下载选项对象，包含 url、可选的 filename、conflictAction 等。
+ * @returns {Promise<number>} 返回新创建下载项的 downloadId。如果下载未能成功开始，Promise 会被拒绝 (reject)。
  */
 async function download(commandParams) {
-  const { options } = commandParams;
-  return await chrome.downloads.download(options);
+  // chrome.downloads.download 需要一个 options 对象
+  // commandParams 直接作为该对象传递
+  return await chrome.downloads.download(commandParams);
 }
 
 /**
- * 搜索下载项
- * @param {Object} commandParams - 命令参数
- * @param {DownloadQuery} [commandParams.query] - 搜索条件
- * @returns {Promise<DownloadItem[]>} 返回下载项列表
+ * 搜索浏览器下载历史中的 DownloadItem。
+ * @param {DownloadQuery} commandParams - 查询参数对象。如果省略或为空对象，则返回所有下载项。
+ * @returns {Promise<DownloadItem[]>} 返回匹配的下载项数组。
  */
 async function search(commandParams) {
-  const { query } = commandParams || {};
-  return await chrome.downloads.search(query);
+  // chrome.downloads.search 需要一个 query 对象
+  // commandParams 直接作为该对象传递
+  // 如果 commandParams 为 undefined 或 null，则传递 {} 查询所有
+  return await chrome.downloads.search(commandParams || {});
 }
 
 /**
- * 暂停下载
- * @param {Object} commandParams - 命令参数
- * @param {number} commandParams.downloadId - 下载项ID
- * @returns {Promise<void>} 无返回值
+ * 暂停指定的下载。
+ * @param {Object} commandParams - 命令参数。
+ * @param {number} commandParams.downloadId - 要暂停的下载项 ID。
+ * @returns {Promise<void>} 操作完成时解析。如果下载无法暂停（例如已完成或不存在），Promise 会被拒绝。
  */
 async function pause(commandParams) {
+  // chrome.downloads.pause 需要 downloadId 参数
   const { downloadId } = commandParams;
   return await chrome.downloads.pause(downloadId);
 }
 
 /**
- * 恢复下载
- * @param {Object} commandParams - 命令参数
- * @param {number} commandParams.downloadId - 下载项ID
- * @returns {Promise<void>} 无返回值
+ * 恢复已暂停的下载。
+ * @param {Object} commandParams - 命令参数。
+ * @param {number} commandParams.downloadId - 要恢复的下载项 ID。
+ * @returns {Promise<void>} 操作完成时解析。如果下载无法恢复（例如未暂停或不存在），Promise 会被拒绝。
  */
 async function resume(commandParams) {
+  // chrome.downloads.resume 需要 downloadId 参数
   const { downloadId } = commandParams;
   return await chrome.downloads.resume(downloadId);
 }
 
 /**
- * 取消下载
- * @param {Object} commandParams - 命令参数
- * @param {number} commandParams.downloadId - 下载项ID
- * @returns {Promise<void>} 无返回值
+ * 取消下载。
+ * @param {Object} commandParams - 命令参数。
+ * @param {number} commandParams.downloadId - 要取消的下载项 ID。
+ * @returns {Promise<void>} 操作完成时解析。如果下载无法取消（例如已完成或不存在），Promise 会被拒绝。
  */
 async function cancel(commandParams) {
+  // chrome.downloads.cancel 需要 downloadId 参数
   const { downloadId } = commandParams;
   return await chrome.downloads.cancel(downloadId);
 }
 
 /**
- * 获取下载文件的保存路径
- * @param {Object} commandParams - 命令参数
- * @param {number} commandParams.downloadId - 下载项ID
- * @returns {Promise<string>} 返回下载文件的路径
+ * 获取与指定下载项关联的文件图标。
+ * @param {Object} commandParams - 命令参数。
+ * @param {number} commandParams.downloadId - 下载项 ID。
+ * @param {Object} [commandParams.options] - 可选。图标选项对象。
+ * @param {number} [commandParams.options.size] - 请求的图标大小，例如 16 或 32。
+ * @returns {Promise<string>} 返回文件图标的 data URI 字符串。
  */
 async function getFileIcon(commandParams) {
+  // chrome.downloads.getFileIcon 需要 downloadId 和可选的 options 参数
   const { downloadId, options } = commandParams;
   return await chrome.downloads.getFileIcon(downloadId, options);
 }
 
 /**
- * 打开下载项
- * @param {Object} commandParams - 命令参数
- * @param {number} commandParams.downloadId - 下载项ID
- * @returns {Promise<void>} 无返回值
+ * 使用系统关联的应用程序打开下载的文件。
+ * @param {Object} commandParams - 命令参数。
+ * @param {number} commandParams.downloadId - 要打开文件的下载项 ID。
+ * @returns {Promise<void>} 操作完成时解析。
  */
 async function open(commandParams) {
+  // chrome.downloads.open 需要 downloadId 参数
   const { downloadId } = commandParams;
   return await chrome.downloads.open(downloadId);
 }
@@ -172,66 +180,76 @@ async function show(commandParams) {
 }
 
 /**
- * 显示默认下载文件夹
- * @returns {Promise<boolean>} 返回是否成功
+ * 在文件管理器中显示默认的下载文件夹。
+ * @param {Object} [commandParams] - 命令参数（未使用）。
+ * @returns {Promise<void>} 操作完成时解析。
  */
-async function showDefaultFolder() {
-  return await chrome.downloads.showDefaultFolder();
+async function showDefaultFolder(commandParams) {
+  // chrome.downloads.showDefaultFolder 不需要参数
+  await chrome.downloads.showDefaultFolder();
+  // API本身不返回，为了统一返回void Promise
+  return Promise.resolve();
 }
 
 /**
- * 擦除下载历史
- * @param {Object} commandParams - 命令参数
- * @param {DownloadQuery} [commandParams.query] - 查询条件
- * @returns {Promise<number[]>} 返回被擦除的下载ID数组
+ * 从下载历史记录中移除与查询匹配的 DownloadItem。不会删除下载的文件。
+ * @param {DownloadQuery} commandParams - 查询参数对象。如果省略或为空对象，则清除所有下载历史。
+ * @returns {Promise<number[]>} 返回被移除的下载项 ID 数组。
  */
 async function erase(commandParams) {
-  const { query } = commandParams || {};
-  return await chrome.downloads.erase(query);
+  // chrome.downloads.erase 需要一个 query 对象
+  // commandParams 直接作为该对象传递
+  return await chrome.downloads.erase(commandParams || {});
 }
 
 /**
- * 删除下载文件
- * @param {Object} commandParams - 命令参数
- * @param {number} commandParams.downloadId - 下载项ID
- * @returns {Promise<void>} 无返回值
+ * 删除与指定 downloadId 关联的已下载文件。此操作会移动文件到回收站/废纸篓。
+ * @param {Object} commandParams - 命令参数。
+ * @param {number} commandParams.downloadId - 要删除其文件的下载项 ID。
+ * @returns {Promise<void>} 操作完成时解析。如果文件无法删除，Promise 会被拒绝。
  */
 async function removeFile(commandParams) {
+  // chrome.downloads.removeFile 需要 downloadId 参数
   const { downloadId } = commandParams;
   return await chrome.downloads.removeFile(downloadId);
 }
 
 /**
- * 接受危险下载
- * @param {Object} commandParams - 命令参数
- * @param {number} commandParams.downloadId - 下载项ID
- * @returns {Promise<void>} 无返回值
+ * 允许用户下载被标记为危险的文件。
+ * @param {Object} commandParams - 命令参数。
+ * @param {number} commandParams.downloadId - 要接受的危险下载项 ID。
+ * @returns {Promise<void>} 操作完成时解析。
  */
 async function acceptDanger(commandParams) {
+  // chrome.downloads.acceptDanger 需要 downloadId 参数
   const { downloadId } = commandParams;
   return await chrome.downloads.acceptDanger(downloadId);
 }
 
 /**
- * 拖动下载项
- * @param {Object} commandParams - 命令参数
- * @param {number} commandParams.downloadId - 下载项ID
- * @returns {Promise<void>} 无返回值
+ * 开始拖动指定的下载文件。
+ * @param {Object} commandParams - 命令参数。
+ * @param {number} commandParams.downloadId - 要拖动的下载项 ID。
+ * @returns {Promise<void>} 操作完成时解析。
  */
 async function drag(commandParams) {
+  // chrome.downloads.drag 需要 downloadId 参数
   const { downloadId } = commandParams;
   return await chrome.downloads.drag(downloadId);
 }
 
 /**
- * 设置下载UI是否显示
- * @param {Object} commandParams - 命令参数
- * @param {boolean} commandParams.enabled - 是否显示
- * @returns {Promise<void>} 无返回值
+ * 设置浏览器窗口底部的下载搁架 (shelf) 是否可见。
+ * @param {Object} commandParams - 命令参数。
+ * @param {boolean} commandParams.enabled - true 表示显示搁架，false 表示隐藏。
+ * @returns {Promise<void>} 操作完成时解析。
  */
 async function setShelfEnabled(commandParams) {
+  // chrome.downloads.setShelfEnabled 需要 enabled 参数
   const { enabled } = commandParams;
-  return await chrome.downloads.setShelfEnabled(enabled);
+  // 注意：此API是同步的，没有回调或Promise，但为保持封装风格，返回一个resolved Promise
+  chrome.downloads.setShelfEnabled(enabled);
+  return Promise.resolve();
 }
 
 export {

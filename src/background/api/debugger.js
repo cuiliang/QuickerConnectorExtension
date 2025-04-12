@@ -24,11 +24,11 @@
  */
 
 /**
- * 附加调试器到目标
- * @param {Object} commandParams - 命令参数
- * @param {Debuggee} commandParams.target - 调试目标
- * @param {string} commandParams.requiredVersion - 需要的协议版本
- * @returns {Promise<void>} 无返回值
+ * 将调试器附加到指定的目标 (tab, extension, etc.)。
+ * @param {Object} commandParams - 命令参数。
+ * @param {Debuggee} commandParams.target - 调试目标，包含 tabId, extensionId 或 targetId。
+ * @param {string} commandParams.requiredVersion - 要求的调试协议版本 (例如, "1.3")。
+ * @returns {Promise<void>} 附加成功时解析。如果目标已被附加或不存在，Promise 会被拒绝。
  */
 async function attach(commandParams) {
   const { target, requiredVersion } = commandParams;
@@ -36,23 +36,23 @@ async function attach(commandParams) {
 }
 
 /**
- * 从目标分离调试器
- * @param {Object} commandParams - 命令参数
- * @param {Debuggee} commandParams.target - 调试目标
- * @returns {Promise<void>} 无返回值
+ * 从指定的目标分离调试器。
+ * @param {Object} commandParams - 命令参数。
+ * @param {Debuggee} target - 调试目标。
+ * @returns {Promise<void>} 分离成功时解析。如果目标未附加或不存在，Promise 会被拒绝。
  */
 async function detach(commandParams) {
-  const { target } = commandParams;
+  const  target  = commandParams;
   return await chrome.debugger.detach(target);
 }
 
 /**
- * 向目标发送调试命令
- * @param {Object} commandParams - 命令参数
- * @param {Debuggee} commandParams.target - 调试目标
- * @param {string} commandParams.method - 调试方法
- * @param {Object} [commandParams.commandParams] - 命令参数
- * @returns {Promise<Object>} 返回调试命令执行结果
+ * 向指定的调试目标发送调试协议命令。
+ * @param {Object} commandParams - 命令参数。
+ * @param {Debuggee} commandParams.target - 调试目标。
+ * @param {string} commandParams.method - 要调用的调试协议方法名。
+ * @param {Object} [commandParams.commandParams] - 可选。传递给调试方法的参数对象。
+ * @returns {Promise<Object | undefined>} 返回命令执行的结果对象。如果发生错误或命令没有返回值，可能返回 undefined。
  */
 async function sendCommand(commandParams) {
   const { target, method, commandParams: debuggerCommandParams } = commandParams;
@@ -60,10 +60,11 @@ async function sendCommand(commandParams) {
 }
 
 /**
- * 获取可用的调试目标列表
- * @returns {Promise<TargetInfo[]>} 返回可用的调试目标列表
+ * 获取当前可用的调试目标列表。
+ * @param {Object} [commandParams] - 命令参数（未使用）。
+ * @returns {Promise<TargetInfo[]>} 返回 TargetInfo 对象数组。
  */
-async function getTargets() {
+async function getTargets(commandParams) {
   return await chrome.debugger.getTargets();
 }
 

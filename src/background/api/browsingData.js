@@ -53,164 +53,137 @@ async function remove(commandParams) {
 }
 
 /**
- * 移除应用程序缓存
- * @param {Object} commandParams - 命令参数
- * @param {RemovalOptions} commandParams.options - 删除选项
- * @returns {Promise<void>} 无返回值
+ * 清除应用程序缓存。
+ * @param {RemovalOptions} commandParams - 清除选项对象，指定时间范围和来源限制。
+ * @returns {Promise<void>} 操作完成时解析。
  */
 async function removeAppcache(commandParams) {
-  const { options } = commandParams;
-  return await chrome.browsingData.removeAppcache(options);
+  return await chrome.browsingData.removeAppcache(commandParams);
 }
 
 /**
- * 移除缓存
- * @param {Object} commandParams - 命令参数
- * @param {RemovalOptions} commandParams.options - 删除选项
- * @returns {Promise<void>} 无返回值
+ * 清除浏览器缓存。
+ * @param {RemovalOptions} commandParams - 清除选项对象，指定时间范围和来源限制。
+ * @returns {Promise<void>} 操作完成时解析。
  */
 async function removeCache(commandParams) {
-  const { options } = commandParams;
-  return await chrome.browsingData.removeCache(options);
+  return await chrome.browsingData.removeCache(commandParams);
 }
 
 /**
- * 移除缓存存储
- * @param {Object} commandParams - 命令参数
- * @param {RemovalOptions} commandParams.options - 删除选项
- * @returns {Promise<void>} 无返回值
+ * 清除缓存存储 (CacheStorage)。
+ * @param {RemovalOptions} commandParams - 清除选项对象，指定时间范围和来源限制。
+ * @returns {Promise<void>} 操作完成时解析。
  */
 async function removeCacheStorage(commandParams) {
-  const { options } = commandParams;
-  return await chrome.browsingData.removeCacheStorage(options);
+  return await chrome.browsingData.removeCacheStorage(commandParams);
 }
 
 /**
- * 移除Cookie
- * @param {Object} commandParams - 命令参数
- * @param {RemovalOptions} commandParams.options - 删除选项
- * @returns {Promise<void>} 无返回值
+ * 清除 Cookie。
+ * @param {RemovalOptions} commandParams - 清除选项对象，指定时间范围和来源限制。
+ * @returns {Promise<void>} 操作完成时解析。
  */
 async function removeCookies(commandParams) {
-  const { options } = commandParams;
-  return await chrome.browsingData.removeCookies(options);
+  return await chrome.browsingData.removeCookies(commandParams);
 }
 
 /**
- * 移除下载记录
- * @param {Object} commandParams - 命令参数
- * @param {RemovalOptions} commandParams.options - 删除选项
- * @returns {Promise<void>} 无返回值
+ * 清除下载记录。
+ * @param {RemovalOptions} commandParams - 清除选项对象，指定时间范围。
+ * @returns {Promise<void>} 操作完成时解析。
  */
 async function removeDownloads(commandParams) {
-  const { options } = commandParams;
-  return await chrome.browsingData.removeDownloads(options);
+  return await chrome.browsingData.removeDownloads(commandParams);
 }
 
 /**
- * 移除文件系统
- * @param {Object} commandParams - 命令参数
- * @param {RemovalOptions} commandParams.options - 删除选项
- * @returns {Promise<void>} 无返回值
+ * 清除文件系统数据。
+ * @param {RemovalOptions} commandParams - 清除选项对象，指定时间范围和来源限制。
+ * @returns {Promise<void>} 操作完成时解析。
  */
 async function removeFileSystems(commandParams) {
-  const { options } = commandParams;
-  return await chrome.browsingData.removeFileSystems(options);
+  return await chrome.browsingData.removeFileSystems(commandParams);
 }
 
 /**
- * 移除表单数据
- * @param {Object} commandParams - 命令参数
- * @param {RemovalOptions} commandParams.options - 删除选项
- * @returns {Promise<void>} 无返回值
+ * 清除自动填充的表单数据。
+ * @param {RemovalOptions} commandParams - 清除选项对象，指定时间范围。
+ * @returns {Promise<void>} 操作完成时解析。
  */
 async function removeFormData(commandParams) {
-  const { options } = commandParams;
-  return await chrome.browsingData.removeFormData(options);
+  return await chrome.browsingData.removeFormData(commandParams);
 }
 
 /**
- * 移除浏览历史
- * @param {Object} commandParams - 命令参数
- * @param {RemovalOptions} commandParams.options - 删除选项
- * @returns {Promise<void>} 无返回值
+ * 清除浏览历史记录。
+ * @param {RemovalOptions} commandParams - 清除选项对象，指定时间范围。
+ * @returns {Promise<void>} 操作完成时解析。
  */
 async function removeHistory(commandParams) {
-  const { options } = commandParams;
-  return await chrome.browsingData.removeHistory(options);
+  return await chrome.browsingData.removeHistory(commandParams);
 }
 
 /**
- * 移除IndexedDB数据
- * @param {Object} commandParams - 命令参数
- * @param {RemovalOptions} commandParams.options - 删除选项
- * @returns {Promise<void>} 无返回值
+ * 清除 IndexedDB 数据。
+ * @param {RemovalOptions} commandParams - 清除选项对象，指定时间范围和来源限制。
+ * @returns {Promise<void>} 操作完成时解析。
  */
 async function removeIndexedDB(commandParams) {
-  const { options } = commandParams;
-  return await chrome.browsingData.removeIndexedDB(options);
+  return await chrome.browsingData.removeIndexedDB(commandParams);
 }
 
 /**
- * 移除本地存储
- * @param {Object} commandParams - 命令参数
- * @param {RemovalOptions} commandParams.options - 删除选项
- * @returns {Promise<void>} 无返回值
+ * 清除本地存储 (LocalStorage) 数据。
+ * @param {RemovalOptions} commandParams - 清除选项对象，指定时间范围和来源限制。
+ * @returns {Promise<void>} 操作完成时解析。
  */
 async function removeLocalStorage(commandParams) {
-  const { options } = commandParams;
-  return await chrome.browsingData.removeLocalStorage(options);
+  return await chrome.browsingData.removeLocalStorage(commandParams);
 }
 
 /**
- * 移除插件数据
- * @param {Object} commandParams - 命令参数
- * @param {RemovalOptions} commandParams.options - 删除选项
- * @returns {Promise<void>} 无返回值
+ * 清除插件数据。
+ * @param {RemovalOptions} commandParams - 清除选项对象，指定时间范围。
+ * @returns {Promise<void>} 操作完成时解析。
  */
 async function removePluginData(commandParams) {
-  const { options } = commandParams;
-  return await chrome.browsingData.removePluginData(options);
+  return await chrome.browsingData.removePluginData(commandParams);
 }
 
 /**
- * 移除密码
- * @param {Object} commandParams - 命令参数
- * @param {RemovalOptions} commandParams.options - 删除选项
- * @returns {Promise<void>} 无返回值
+ * 清除保存的密码。
+ * @param {RemovalOptions} commandParams - 清除选项对象，指定时间范围。
+ * @returns {Promise<void>} 操作完成时解析。
  */
 async function removePasswords(commandParams) {
-  const { options } = commandParams;
-  return await chrome.browsingData.removePasswords(options);
+  return await chrome.browsingData.removePasswords(commandParams);
 }
 
 /**
- * 移除Service Workers
- * @param {Object} commandParams - 命令参数
- * @param {RemovalOptions} commandParams.options - 删除选项
- * @returns {Promise<void>} 无返回值
+ * 清除 Service Worker 数据。
+ * @param {RemovalOptions} commandParams - 清除选项对象，指定时间范围和来源限制。
+ * @returns {Promise<void>} 操作完成时解析。
  */
 async function removeServiceWorkers(commandParams) {
-  const { options } = commandParams;
-  return await chrome.browsingData.removeServiceWorkers(options);
+  return await chrome.browsingData.removeServiceWorkers(commandParams);
 }
 
 /**
- * 移除WebSQL数据
- * @param {Object} commandParams - 命令参数
- * @param {RemovalOptions} commandParams.options - 删除选项
- * @returns {Promise<void>} 无返回值
+ * 清除 WebSQL 数据。
+ * @param {RemovalOptions} commandParams - 清除选项对象，指定时间范围和来源限制。
+ * @returns {Promise<void>} 操作完成时解析。
  */
 async function removeWebSQL(commandParams) {
-  const { options } = commandParams;
-  return await chrome.browsingData.removeWebSQL(options);
+  return await chrome.browsingData.removeWebSQL(commandParams);
 }
 
 /**
- * 获取浏览器的数据删除设置
- * @returns {Promise<SettingsSet>} 返回设置对象
+ * 获取当前浏览器的数据清除设置。
+ * @param {Object} [commandParams] - 命令参数（未使用）。
+ * @returns {Promise<SettingsSet>} 返回包含当前设置的对象。
  */
-async function settings() {
+async function settings(commandParams) {
   return await chrome.browsingData.settings();
 }
 

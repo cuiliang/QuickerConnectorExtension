@@ -64,54 +64,47 @@
  */
 
 /**
- * 获取指定Cookie
- * @param {Object} commandParams - 命令参数
- * @param {CookieDetails} commandParams.details - Cookie详情
- * @returns {Promise<Cookie>} 返回Cookie对象
+ * 获取单个 Cookie 的信息。
+ * @param {CookieDetails} commandParams - 指定要获取的 Cookie 的详细信息 (url, name, storeId)。
+ * @returns {Promise<Cookie | null>} 返回匹配的 Cookie 对象，如果找不到则返回 null。
  */
 async function get(commandParams) {
-  const { details } = commandParams;
-  return await chrome.cookies.get(details);
+  return await chrome.cookies.get(commandParams);
 }
 
 /**
- * 获取所有符合条件的Cookie
- * @param {Object} commandParams - 命令参数
- * @param {CookieDetails} [commandParams.details] - Cookie筛选条件
- * @returns {Promise<Cookie[]>} 返回Cookie对象数组
+ * 获取所有符合指定过滤条件的 Cookie。
+ * @param {Object} commandParams - 过滤条件对象。如果省略或为空对象，则获取所有 Cookie。
+ * @returns {Promise<Cookie[]>} 返回匹配的 Cookie 对象数组。
  */
 async function getAll(commandParams) {
-  const { details } = commandParams || {};
-  return await chrome.cookies.getAll(details);
+  return await chrome.cookies.getAll(commandParams || {});
 }
 
 /**
- * 设置Cookie
- * @param {Object} commandParams - 命令参数
- * @param {SetCookieDetails} commandParams.details - Cookie设置详情
- * @returns {Promise<Cookie>} 返回设置的Cookie对象
+ * 设置一个 Cookie。
+ * @param {SetCookieDetails} commandParams - 要设置的 Cookie 的详细信息。
+ * @returns {Promise<Cookie | null>} 返回设置成功的 Cookie 对象。如果设置失败（例如由于无效参数），则返回 null。
  */
 async function set(commandParams) {
-  const { details } = commandParams;
-  return await chrome.cookies.set(details);
+  return await chrome.cookies.set(commandParams);
 }
 
 /**
- * 删除Cookie
- * @param {Object} commandParams - 命令参数
- * @param {DeleteCookieDetails} commandParams.details - Cookie删除详情
- * @returns {Promise<{name: string, url: string, storeId: string}>} 返回删除的Cookie详情
+ * 删除一个 Cookie。
+ * @param {DeleteCookieDetails} commandParams - 指定要删除的 Cookie 的详细信息 (url, name, storeId)。
+ * @returns {Promise<{url: string, name: string, storeId: string} | null>} 返回包含已删除 Cookie 信息的对象，如果找不到指定 Cookie 则返回 null。
  */
 async function remove(commandParams) {
-  const { details } = commandParams;
-  return await chrome.cookies.remove(details);
+  return await chrome.cookies.remove(commandParams);
 }
 
 /**
- * 获取所有Cookie存储
- * @returns {Promise<CookieStore[]>} 返回Cookie存储数组
+ * 获取所有可用的 Cookie 存储 (例如，"0" 表示常规存储，"1" 表示隐身窗口存储)。
+ * @param {Object} [commandParams] - 命令参数（未使用）。
+ * @returns {Promise<CookieStore[]>} 返回 CookieStore 对象数组。
  */
-async function getAllCookieStores() {
+async function getAllCookieStores(commandParams) {
   return await chrome.cookies.getAllCookieStores();
 }
 

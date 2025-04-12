@@ -85,20 +85,20 @@
  */
 
 /**
- * 创建新的浏览器窗口
- * @param {CreateParams} commandParams - 创建窗口的参数
- * @returns {Promise<Window>} 返回创建的窗口对象
+ * 创建新的浏览器窗口。
+ * @param {CreateParams} commandParams - 创建窗口的参数对象。
+ * @returns {Promise<Window>} 返回创建的窗口信息。
  */
 async function create(commandParams) {
   return await chrome.windows.create(commandParams);
 }
 
 /**
- * 获取指定ID的窗口
- * @param {Object} commandParams - 命令参数
- * @param {number} commandParams.windowId - 要获取的窗口ID
- * @param {QueryOptions} [commandParams.queryOptions] - 查询选项
- * @returns {Promise<Window>} 返回获取的窗口对象
+ * 获取指定 ID 的窗口信息。
+ * @param {Object} commandParams - 命令参数。
+ * @param {number} commandParams.windowId - 要获取的窗口 ID。
+ * @param {QueryOptions} [commandParams.queryOptions] - 可选。查询选项，例如是否包含标签页信息。
+ * @returns {Promise<Window>} 返回窗口信息。
  */
 async function get(commandParams) {
   const { windowId, queryOptions } = commandParams;
@@ -106,43 +106,43 @@ async function get(commandParams) {
 }
 
 /**
- * 获取所有窗口
- * @param {Object} commandParams - 命令参数
- * @param {QueryOptions} [commandParams.queryOptions] - 查询选项
- * @returns {Promise<Window[]>} 返回窗口对象数组
+ * 获取所有浏览器窗口的信息。
+ * @param {Object} [commandParams] - 可选。命令参数。
+ * @param {QueryOptions} [commandParams] - 可选。查询选项，例如是否包含标签页信息或过滤窗口类型。
+ * @returns {Promise<Window[]>} 返回所有窗口信息的数组。
  */
 async function getAll(commandParams) {
-  const { queryOptions } = commandParams || {};
+  const queryOptions  = commandParams || {};
   return await chrome.windows.getAll(queryOptions);
 }
 
 /**
- * 获取当前窗口
- * @param {Object} commandParams - 命令参数
- * @param {QueryOptions} [commandParams.queryOptions] - 查询选项
- * @returns {Promise<Window>} 返回当前窗口对象
+ * 获取当前（通常是最后获得焦点的）浏览器窗口的信息。
+ * @param {Object} [commandParams] - 可选。命令参数。
+ * @param {QueryOptions} [commandParams] - 可选。查询选项，例如是否包含标签页信息。
+ * @returns {Promise<Window>} 返回当前窗口信息。
  */
 async function getCurrent(commandParams) {
-  const { queryOptions } = commandParams || {};
+  const queryOptions = commandParams || {};
   return await chrome.windows.getCurrent(queryOptions);
 }
 
 /**
- * 获取最近聚焦的窗口
- * @param {Object} commandParams - 命令参数
- * @param {QueryOptions} [commandParams.queryOptions] - 查询选项
- * @returns {Promise<Window>} 返回最近聚焦的窗口对象
+ * 获取最后获得焦点的浏览器窗口（通常是用户当前正在交互的窗口）。
+ * @param {Object} [commandParams] - 可选。命令参数。
+ * @param {QueryOptions} [commandParams] - 可选。查询选项，例如是否包含标签页信息或过滤窗口类型。
+ * @returns {Promise<Window>} 返回最后获得焦点的窗口信息。
  */
 async function getLastFocused(commandParams) {
-  const { queryOptions } = commandParams || {};
+  const  queryOptions = commandParams || {};
   return await chrome.windows.getLastFocused(queryOptions);
 }
 
 /**
- * 移除（关闭）窗口及其中的所有标签页
- * @param {Object} commandParams - 命令参数
- * @param {number} commandParams.windowId - 要关闭的窗口ID
- * @returns {Promise<void>} 无返回值
+ * 移除（关闭）指定的窗口及其中的所有标签页。
+ * @param {Object} commandParams - 命令参数。
+ * @param {number} commandParams.windowId - 要关闭的窗口 ID。
+ * @returns {Promise<void>} 操作完成时解析。
  */
 async function remove(commandParams) {
   const { windowId } = commandParams;
@@ -150,11 +150,11 @@ async function remove(commandParams) {
 }
 
 /**
- * 更新窗口的属性
- * @param {Object} commandParams - 命令参数
- * @param {number} commandParams.windowId - 要更新的窗口ID
- * @param {UpdateInfo} commandParams.updateInfo - 更新的窗口属性
- * @returns {Promise<Window>} 返回更新后的窗口对象
+ * 更新指定窗口的属性。
+ * @param {Object} commandParams - 命令参数。
+ * @param {number} commandParams.windowId - 要更新的窗口 ID。
+ * @param {UpdateInfo} commandParams.updateInfo - 包含要更新的属性的对象。
+ * @returns {Promise<Window>} 返回更新后的窗口信息。
  */
 async function update(commandParams) {
   const { windowId, updateInfo } = commandParams;

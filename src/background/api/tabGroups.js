@@ -45,10 +45,10 @@
  */
 
 /**
- * 获取指定标签组
- * @param {Object} commandParams - 命令参数
- * @param {number} commandParams.groupId - 标签组ID
- * @returns {Promise<TabGroup>} 返回标签组信息
+ * 获取指定 ID 的标签组信息。
+ * @param {Object} commandParams - 命令参数。
+ * @param {number} commandParams.groupId - 要获取的标签组 ID。
+ * @returns {Promise<TabGroup>} 返回标签组信息。
  */
 async function get(commandParams) {
   const { groupId } = commandParams;
@@ -56,22 +56,20 @@ async function get(commandParams) {
 }
 
 /**
- * 查询标签组
- * @param {Object} commandParams - 命令参数
- * @param {TabGroupQueryInfo} [commandParams.queryInfo] - 查询条件
- * @returns {Promise<TabGroup[]>} 返回匹配的标签组数组
+ * 查询符合特定条件的标签组。
+ * @param {TabGroupQueryInfo} commandParams - 查询条件对象。如果省略或为空对象，则查询所有标签组。
+ * @returns {Promise<TabGroup[]>} 返回匹配的标签组信息数组。
  */
 async function query(commandParams) {
-  const { queryInfo } = commandParams || {};
-  return await chrome.tabGroups.query(queryInfo);
+  return await chrome.tabGroups.query(commandParams || {});
 }
 
 /**
- * 更新标签组
- * @param {Object} commandParams - 命令参数
- * @param {number} commandParams.groupId - 标签组ID
- * @param {TabGroupUpdateProperties} commandParams.updateProperties - 更新属性
- * @returns {Promise<TabGroup>} 返回更新后的标签组
+ * 更新指定标签组的属性。
+ * @param {Object} commandParams - 命令参数。
+ * @param {number} commandParams.groupId - 要更新的标签组 ID。
+ * @param {TabGroupUpdateProperties} commandParams.updateProperties - 包含要更新的属性的对象。
+ * @returns {Promise<TabGroup>} 返回更新后的标签组信息。
  */
 async function update(commandParams) {
   const { groupId, updateProperties } = commandParams;
@@ -79,11 +77,11 @@ async function update(commandParams) {
 }
 
 /**
- * 移动标签组
- * @param {Object} commandParams - 命令参数
- * @param {number} commandParams.groupId - 标签组ID
- * @param {TabGroupMoveProperties} commandParams.moveProperties - 移动属性
- * @returns {Promise<TabGroup>} 返回移动后的标签组
+ * 将指定的标签组移动到同一窗口或不同窗口的新位置。
+ * @param {Object} commandParams - 命令参数。
+ * @param {number} commandParams.groupId - 要移动的标签组 ID。
+ * @param {TabGroupMoveProperties} commandParams.moveProperties - 指定新位置的属性对象 (包含可选的 windowId 和可选的 index)。
+ * @returns {Promise<TabGroup>} 返回移动后的标签组信息。
  */
 async function move(commandParams) {
   const { groupId, moveProperties } = commandParams;
