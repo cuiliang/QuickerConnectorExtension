@@ -294,6 +294,7 @@ function addDefaultProperties(obj, defaults) {
 const messageDefaults = {
   "version": _version,
   "browser": _browser,
+  "manifestVersion": manifest.manifest_version,
   "messageType": 0,
   "isSuccess": true,
   "replyTo": 0,

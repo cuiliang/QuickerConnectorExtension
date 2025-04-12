@@ -13,7 +13,7 @@ import { sendReplyToQuicker } from "./connection.js";
  * 将脚本安装到当前已经打开的标签页中
  */
 export function installToExistingTabs() {
-  console.log('installing script into tabs.');
+ 
 
   const manifest = chrome.runtime.getManifest();
   // Ensure content_scripts and js array exist
@@ -22,18 +22,26 @@ export function installToExistingTabs() {
     return;
   }
   const scripts = manifest.content_scripts[0].js;
+  const css = manifest.content_scripts[0].css;
 
   runScriptOnAllTabs(function (tab) {
-    scripts.forEach(script => {
-      // Note: chrome.tabs.executeScript is deprecated in MV3. Use chrome.scripting.executeScript instead.
-      chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        files: [script]
-      }, () => {
-        if (chrome.runtime.lastError) {
-          console.warn(`Error injecting script ${script} into tab ${tab.id}: ${chrome.runtime.lastError.message}`);
-        }
-      });
+    // Note: chrome.tabs.executeScript is deprecated in MV3. Use chrome.scripting.executeScript instead.
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      files: scripts
+    }, () => {
+      if (chrome.runtime.lastError) {
+        console.warn(`Error injecting script ${script} into tab ${tab.id}: ${chrome.runtime.lastError.message}`);
+      }
+    });
+
+    chrome.scripting.insertCSS({
+      target: { tabId: tab.id },
+      files: css
+    }, () => {
+      if (chrome.runtime.lastError) {
+        console.warn(`Error injecting CSS ${css} into tab ${tab.id}: ${chrome.runtime.lastError.message}`);
+      }
     });
   });
 }
@@ -109,7 +117,7 @@ export function setupActionsForTab(tab, position) {
   }
 
   if (actionsForTab.length > 0) {
-
+    console.log('...actions for tab:', tab.id, 'URL:', url, 'actions:', actionsForTab);
     chrome.tabs.sendMessage(tab.id,
       {
         cmd: 'setup_actions',

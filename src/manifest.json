@@ -1,9 +1,9 @@
 {
-  "name": "Quicker Connector",
+  "name": "Quicker Connector BETA",
   "version": "0.8.0",
   "manifest_version": 3,
   "minimum_chrome_version": "135",
-  "description": "Native message connector with Quicker application",
+  "description": "Native message connector with Quicker application. THIS EXTENSION IS FOR BETA TESTING",
   "background": {
     "service_worker": "background/main.js",
     "type": "module"
@@ -20,7 +20,6 @@
         "<all_urls>"
       ],
       "js": [
-        "./libs/jquery-3.6.0.min.js",
         "./content/content.js"
       ],
       "css": [
@@ -43,7 +42,6 @@
     "storage",
     "tts",
     "scripting",
-    "alarms",
     "userScripts",
     "activeTab"
   ],
