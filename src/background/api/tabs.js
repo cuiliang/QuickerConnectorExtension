@@ -118,6 +118,51 @@
  */
 
 /**
+ * 内部辅助函数：如果需要，获取当前窗口的活动标签页 ID。
+ * @param {number | null | undefined} tabId - 传入的标签页 ID。
+ * @returns {Promise<number>} - 返回有效的标签页 ID。
+ * @throws {Error} 如果找不到活动标签页。
+ */
+async function _getActiveTabIdIfNeeded(tabId) {
+  if (tabId === null || tabId === undefined || tabId === 0) {
+    const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    if (tabs.length > 0) {
+      return tabs[0].id;
+    } else {
+      throw new Error("Could not find active tab in the current window.");
+    }
+  }
+  return tabId;
+}
+
+/**
+ * 内部辅助函数：如果需要，获取当前窗口的活动标签页 ID的数组。
+ * @param {number[] | null | undefined} tabIds - 传入的标签页 ID 数组。
+ * @returns {Promise<number[]>} - 返回有效的标签页 ID 数组。
+ * @throws {Error} 如果找不到活动标签页。
+ */
+async function _getActiveTabIdsIfNeeded(tabIds) {
+  if (!tabIds || tabIds.length === 0 || (tabIds.length === 1 && tabIds[0] === 0)) {
+    return [await _getActiveTabIdIfNeeded(0)];
+  }
+  return tabIds;
+}
+
+/**
+ * 内部辅助函数：如果需要， 获取最后聚焦的窗口 ID。
+ * @param {number | null | undefined} windowId - 传入的窗口 ID。
+ * @returns {Promise<number>} - 返回有效的窗口 ID。
+ * @throws {Error} 如果找不到活动窗口。
+ */
+async function _getLastFocusedWindowIdIfNeeded(windowId) {
+  if (windowId === null || windowId === undefined || windowId === 0) {
+    return await chrome.windows.getLastFocused().id;
+  }
+  return windowId;
+}
+
+
+/**
  * 创建标签页
  * @param {CreateProperties} commandParams - 创建新标签页的属性对象。
  * @returns {Promise<Tab>} 返回创建的标签页信息。
@@ -136,7 +181,8 @@ async function create(commandParams) {
  */
 async function get(commandParams) {
   // chrome.tabs.get 需要一个简单的 tabId 参数
-  const { tabId } = commandParams;
+  const { tabId: rawTabId } = commandParams || {};
+  const tabId = await _getActiveTabIdIfNeeded(rawTabId);
   return await chrome.tabs.get(tabId);
 }
 
@@ -179,40 +225,41 @@ async function update(commandParams) {
  */
 async function move(commandParams) {
   // chrome.tabs.move 需要 tabIds 和 moveProperties 两个参数
-  const { tabIds, moveProperties } = commandParams;
+  const { tabIds: tabIdsRaw, moveProperties } = commandParams;
+  const tabIds = await _getActiveTabIdsIfNeeded(tabIdsRaw);
   return await chrome.tabs.move(tabIds, moveProperties);
 }
 
 /**
  * 重新加载标签页，类似于用户点击浏览器刷新按钮。
  * @param {Object} [commandParams] - 可选。命令参数
- * @param {number} [commandParams.tabId] - 可选。要重新加载的标签页 ID。如果省略，则重新加载当前窗口的活动标签页。
+ * @param {number} [commandParams.tabId] - 可选。要重新加载的标签页 ID。如果省略或为无效值 (0, null, undefined)，则重新加载当前窗口的活动标签页。
  * @param {Object} [commandParams.reloadProperties] - 可选。重新加载选项对象。
  * @param {boolean} [commandParams.reloadProperties.bypassCache] - 是否绕过缓存，默认为 false。
  * @returns {Promise<void>} 操作完成时解析。
  */
 async function reload(commandParams) {
-  // chrome.tabs.reload 需要可选的 tabId 和可选的 reloadProperties 参数
-  const { tabId, reloadProperties } = commandParams || {};
+  const { tabId: rawTabId, reloadProperties } = commandParams || {};
+  const tabId = await _getActiveTabIdIfNeeded(rawTabId);
   return await chrome.tabs.reload(tabId, reloadProperties);
 }
 
 /**
  * 复制指定的标签页。
  * @param {Object} commandParams - 命令参数
- * @param {number} commandParams.tabId - 要复制的标签页 ID。
+ * @param {number} commandParams.tabId - 要复制的标签页 ID。如果为无效值 (0, null, undefined)，则复制当前窗口的活动标签页。
  * @returns {Promise<Tab | undefined>} 返回新创建的标签页信息，如果发生错误则可能返回 undefined。
  */
 async function duplicate(commandParams) {
-  // chrome.tabs.duplicate 需要一个简单的 tabId 参数
-  const { tabId } = commandParams;
+  const { tabId: rawTabId } = commandParams || {};
+  const tabId = await _getActiveTabIdIfNeeded(rawTabId);
   return await chrome.tabs.duplicate(tabId);
 }
 
 /**
  * 向指定标签页的内容脚本发送单次消息。
  * @param {Object} commandParams - 命令参数
- * @param {number} commandParams.tabId - 目标标签页的 ID。
+ * @param {number} commandParams.tabId - 目标标签页的 ID。如果为无效值 (0, null, undefined)，则发送给当前窗口的活动标签页。
  * @param {any} commandParams.message - 要发送的消息 (必须是 JSON 可序列化的)。
  * @param {Object} [commandParams.options] - 可选。发送选项对象。
  * @param {number} [commandParams.options.frameId] - 发送到特定框架 ID。0 表示主框架。
@@ -220,8 +267,8 @@ async function duplicate(commandParams) {
  * @returns {Promise<any>} 返回内容脚本发送的响应。如果目标标签页不存在或没有接收者，则 Promise 会被拒绝 (reject)。
  */
 async function sendMessage(commandParams) {
-  // chrome.tabs.sendMessage 需要 tabId, message, 和可选的 options 参数
-  const { tabId, message, options } = commandParams;
+  const { tabId: rawTabId, message, options } = commandParams;
+  const tabId = await _getActiveTabIdIfNeeded(rawTabId);
   return await chrome.tabs.sendMessage(tabId, message, options);
 }
 
@@ -233,7 +280,10 @@ async function sendMessage(commandParams) {
  */
 async function remove(commandParams) {
   // chrome.tabs.remove 需要一个 tabIds 参数 (number 或 number[])
-  const { tabIds } = commandParams;
+  const { tabIds: tabIdsRaw } = commandParams || {};
+
+  const tabIds = await _getActiveTabIdsIfNeeded(tabIdsRaw);
+
   return await chrome.tabs.remove(tabIds);
 }
 
@@ -260,88 +310,85 @@ async function group(commandParams) {
  */
 async function ungroup(commandParams) {
   // chrome.tabs.ungroup 需要一个 tabIds 参数 (number 或 number[])
-  const { tabIds } = commandParams;
+  const { tabIds: tabIdsRaw } = commandParams || {};
+
+  const tabIds = await _getActiveTabIdsIfNeeded(tabIdsRaw);
+
   return await chrome.tabs.ungroup(tabIds);
 }
 
 /**
  * 丢弃（卸载）指定的标签页以释放内存。被丢弃的标签页仍然在标签栏可见，并在激活时重新加载。
  * @param {Object} commandParams - 命令参数
- * @param {number} commandParams.tabId - 要丢弃的标签页 ID。
+ * @param {number} commandParams.tabId - 要丢弃的标签页 ID。如果为无效值 (0, null, undefined)，则丢弃当前窗口的活动标签页。
  * @returns {Promise<Tab | undefined>} 返回被丢弃的标签页信息，如果标签页无法被丢弃 (例如，活动标签页或不允许丢弃的标签页) 或不存在，则返回 undefined。
  */
 async function discard(commandParams) {
-  // chrome.tabs.discard 需要一个简单的 tabId 参数
-  const { tabId } = commandParams;
+  const { tabId: rawTabId } = commandParams || {};
+  const tabId = await _getActiveTabIdIfNeeded(rawTabId);
   return await chrome.tabs.discard(tabId);
 }
-
-
 
 /**
  * 放大或缩小指定的标签页。
  * @param {Object} commandParams - 命令参数
- * @param {number} [commandParams.tabId] - 可选。要设置缩放级别的标签页 ID。如果省略，则设置当前窗口活动标签页的缩放级别。
+ * @param {number} [commandParams.tabId] - 可选。要设置缩放级别的标签页 ID。如果省略或为无效值 (0, null, undefined)，则设置当前窗口活动标签页的缩放级别。
  * @param {number} commandParams.zoomFactor - 缩放因子。必须大于 0。 1 表示 100%, 2 表示 200%, 0.5 表示 50%。设置为 0 会重置为默认缩放级别。
  * @returns {Promise<void>} 操作完成时解析。
  */
 async function setZoom(commandParams) {
-  // chrome.tabs.setZoom 需要可选的 tabId 和 zoomFactor 参数
-  const { tabId, zoomFactor } = commandParams;
-  // chrome.tabs.setZoom 本身能处理 tabId 为 undefined 的情况
-  return await chrome.tabs.setZoom(tabId, zoomFactor);
+  const { tabId: rawTabId, zoomFactor } = commandParams || {};
+  const tabId = await _getActiveTabIdIfNeeded(rawTabId);
+  return await chrome.tabs.setZoom(tabId, zoomFactor ?? 1);
 }
 
 /**
  * 获取指定标签页的缩放因子。
  * @param {Object} [commandParams] - 可选。命令参数
- * @param {number} [commandParams.tabId] - 可选。要获取缩放级别的标签页 ID。如果省略，则获取当前窗口活动标签页的缩放级别。
+ * @param {number} [commandParams.tabId] - 可选。要获取缩放级别的标签页 ID。如果省略或为无效值 (0, null, undefined)，则获取当前窗口活动标签页的缩放级别。
  * @returns {Promise<number>} 返回当前缩放因子。
  */
 async function getZoom(commandParams) {
-  // chrome.tabs.getZoom 需要可选的 tabId 参数
-  const { tabId } = commandParams || {}; // 允许 commandParams 本身是可选的
-  // chrome.tabs.getZoom 本身能处理 tabId 为 undefined 的情况
+  const { tabId: rawTabId } = commandParams || {};
+  const tabId = await _getActiveTabIdIfNeeded(rawTabId);
   return await chrome.tabs.getZoom(tabId);
 }
 
 /**
  * 设置指定标签页的缩放设置（模式和范围）。这些设置是持久的。
  * @param {Object} commandParams - 命令参数
- * @param {number} [commandParams.tabId] - 可选。要设置缩放设置的标签页 ID。如果省略，则设置当前窗口活动标签页的缩放设置。
+ * @param {number} [commandParams.tabId] - 可选。要设置缩放设置的标签页 ID。如果省略或为无效值 (0, null, undefined)，则设置当前窗口活动标签页的缩放设置。
  * @param {ZoomSettings} commandParams.zoomSettings - 要应用的缩放设置对象。
  * @returns {Promise<void>} 操作完成时解析。
  */
 async function setZoomSettings(commandParams) {
-  // chrome.tabs.setZoomSettings 需要可选的 tabId 和 zoomSettings 对象
-  const { tabId, zoomSettings } = commandParams;
-  // chrome.tabs.setZoomSettings 本身能处理 tabId 为 undefined 的情况
+  const { tabId: rawTabId, zoomSettings } = commandParams;
+  const tabId = await _getActiveTabIdIfNeeded(rawTabId);
   return await chrome.tabs.setZoomSettings(tabId, zoomSettings);
 }
 
 /**
  * 获取指定标签页的缩放设置（模式和范围）。
  * @param {Object} [commandParams] - 可选。命令参数
- * @param {number} [commandParams.tabId] - 可选。要获取缩放设置的标签页 ID。如果省略，则获取当前窗口活动标签页的缩放设置。
+ * @param {number} [commandParams.tabId] - 可选。要获取缩放设置的标签页 ID。如果省略或为无效值 (0, null, undefined)，则获取当前窗口活动标签页的缩放设置。
  * @returns {Promise<ZoomSettings>} 返回当前缩放设置对象。
  */
 async function getZoomSettings(commandParams) {
-  // chrome.tabs.getZoomSettings 需要可选的 tabId 参数
-  const { tabId } = commandParams || {}; // 允许 commandParams 本身是可选的
-  // chrome.tabs.getZoomSettings 本身能处理 tabId 为 undefined 的情况
+  const { tabId: rawTabId } = commandParams || {};
+  const tabId = await _getActiveTabIdIfNeeded(rawTabId);
   return await chrome.tabs.getZoomSettings(tabId);
 }
 
 /**
  * 高亮显示（通常是选中）指定的标签页。
  * @param {HighlightInfo} commandParams - 高亮信息对象，包含窗口 ID（可选，默认当前窗口）和要高亮的标签页索引/ID 数组。
- * @param {number[]} commandParams.tabs - 要高亮的标签页索引或 ID 的数组。
+ * @param {number[]} commandParams.tabs - 要高亮的标签页【索引】（序号）的数组。
  * @param {number} [commandParams.windowId] - 可选。包含这些标签页的窗口 ID。默认为当前窗口。
  * @returns {Promise<chrome.windows.Window>} 返回包含高亮标签页的窗口信息。
  */
 async function highlight(commandParams) {
-  // chrome.tabs.highlight 需要一个 highlightInfo 对象
-  // commandParams 直接作为该对象传递
+  
+
   return await chrome.tabs.highlight(commandParams);
 }
 
@@ -356,44 +403,40 @@ async function highlight(commandParams) {
  */
 async function captureVisibleTab(commandParams) {
   // chrome.tabs.captureVisibleTab 需要可选的 windowId 和可选的 options 参数
-  const { windowId, options } = commandParams || {};
+  const { windowId: windowIdRaw, options } = commandParams || {};
+  const windowId = await _getLastFocusedWindowIdIfNeeded(windowIdRaw);
+
   return await chrome.tabs.captureVisibleTab(windowId, options);
 }
 
 /**
  * 检测指定标签页内容的语言。
  * @param {Object} [commandParams] - 可选。命令参数
- * @param {number} [commandParams.tabId] - 可选。要检测语言的标签页 ID。如果省略，则检测当前窗口活动标签页的语言。
+ * @param {number} [commandParams.tabId] - 可选。要检测语言的标签页 ID。如果省略或为无效值 (0, null, undefined)，则检测当前窗口活动标签页的语言。
  * @returns {Promise<string>} 返回检测到的主要语言代码 (BCP 47格式, 例如, "en", "zh-CN")。如果语言无法检测到，则返回 "und" (undetermined)。
  */
 async function detectLanguage(commandParams) {
-  // chrome.tabs.detectLanguage 需要可选的 tabId 参数
-  const { tabId } = commandParams || {}; // 允许 commandParams 本身是可选的
-  // chrome.tabs.detectLanguage 本身能处理 tabId 为 undefined 的情况
+  const { tabId: rawTabId } = commandParams || {};
+  const tabId = await _getActiveTabIdIfNeeded(rawTabId);
   return await chrome.tabs.detectLanguage(tabId);
 }
-
 
 /**
  * 切换指定标签页的静音状态。这是一个辅助函数，非直接 API 封装。
  * @param {Object} commandParams - 命令参数
- * @param {number} commandParams.tabId - 要切换静音状态的标签页 ID。
+ * @param {number} commandParams.tabId - 要切换静音状态的标签页 ID。如果为无效值 (0, null, undefined)，则切换当前窗口活动标签页的静音状态。
  * @returns {Promise<Tab>} 返回更新后的标签页信息。
+ * @throws {Error} 如果找不到标签页或标签页没有 mutedInfo。
  */
 async function toggleMuteState(commandParams) {
-  // 这是一个自定义的辅助函数，它需要 tabId
-  const { tabId } = commandParams;
+  const { tabId: rawTabId } = commandParams;
+  const tabId = await _getActiveTabIdIfNeeded(rawTabId);
   const tab = await chrome.tabs.get(tabId);
-  // 检查 tab 是否存在以及是否有 mutedInfo
   if (tab && tab.mutedInfo) {
     const muted = !tab.mutedInfo.muted;
     return await chrome.tabs.update(tabId, { muted });
   } else {
-    // 处理标签页不存在或没有 mutedInfo 的情况
-    console.error(`Tab with id ${tabId} not found or missing mutedInfo.`);
-    // 可以选择抛出错误或返回 undefined/null
     throw new Error(`Tab with id ${tabId} not found or missing mutedInfo.`);
-    // 或者 return undefined;
   }
 }
 
@@ -431,16 +474,29 @@ async function getCurrent() {
   return await chrome.tabs.getCurrent();
 }
 
+/**
+ * 导航到指定标签页的上一个历史记录条目。
+ * @param {Object} [commandParams] - 可选。命令参数。
+ * @param {number} [commandParams.tabId] - 可选。目标标签页的 ID。如果省略或为无效值 (0, null, undefined)，则导航当前窗口的活动标签页。
+ * @returns {Promise<void>} 操作完成时解析。如果无法后退（例如，没有历史记录），则 Promise 会被拒绝。
+ */
 async function goBack(commandParams) {
-  const { tabId } = commandParams || {};
-  return await chrome.tabs.goBack();
+  const { tabId: rawTabId } = commandParams || {};
+  const tabId = await _getActiveTabIdIfNeeded(rawTabId);
+  return await chrome.tabs.goBack(tabId);
 }
 
+/**
+ * 导航到指定标签页的下一个历史记录条目。
+ * @param {Object} [commandParams] - 可选。命令参数。
+ * @param {number} [commandParams.tabId] - 可选。目标标签页的 ID。如果省略或为无效值 (0, null, undefined)，则导航当前窗口的活动标签页。
+ * @returns {Promise<void>} 操作完成时解析。如果无法前进（例如，没有前进的历史记录），则 Promise 会被拒绝。
+ */
 async function goForward(commandParams) {
-  const { tabId } = commandParams || {};
-  return await chrome.tabs.goForward();
+  const { tabId: rawTabId } = commandParams || {};
+  const tabId = await _getActiveTabIdIfNeeded(rawTabId);
+  return await chrome.tabs.goForward(tabId);
 }
-
 
 export {
   create,
