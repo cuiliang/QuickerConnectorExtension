@@ -93,6 +93,14 @@ async function create(commandParams) {
   return await chrome.windows.create(commandParams);
 }
 
+
+async function _getActiveWindowIdIfNeeded(windowId) {
+  if (windowId === null || windowId === undefined || windowId === 0) {
+    return await chrome.windows.getLastFocused().id;
+  }
+  return windowId;
+}
+
 /**
  * 获取指定 ID 的窗口信息。
  * @param {Object} commandParams - 命令参数。
@@ -101,7 +109,8 @@ async function create(commandParams) {
  * @returns {Promise<Window>} 返回窗口信息。
  */
 async function get(commandParams) {
-  const { windowId, queryOptions } = commandParams;
+  const { windowId: windowIdRaw, queryOptions } = commandParams;
+  const windowId = await _getActiveWindowIdIfNeeded(windowIdRaw);
   return await chrome.windows.get(windowId, queryOptions);
 }
 
@@ -145,7 +154,8 @@ async function getLastFocused(commandParams) {
  * @returns {Promise<void>} 操作完成时解析。
  */
 async function remove(commandParams) {
-  const { windowId } = commandParams;
+  const { windowId: windowIdRaw } = commandParams;
+  const windowId = await _getActiveWindowIdIfNeeded(windowIdRaw);
   return await chrome.windows.remove(windowId);
 }
 
@@ -157,7 +167,8 @@ async function remove(commandParams) {
  * @returns {Promise<Window>} 返回更新后的窗口信息。
  */
 async function update(commandParams) {
-  const { windowId, updateInfo } = commandParams;
+  const { windowId: windowIdRaw, updateInfo } = commandParams;
+  const windowId = await _getActiveWindowIdIfNeeded(windowIdRaw);
   return await chrome.windows.update(windowId, updateInfo);
 }
 
