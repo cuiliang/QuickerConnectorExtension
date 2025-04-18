@@ -12,6 +12,7 @@ import * as tabGroups from "./api/tabGroups.js";
 import * as tabs from "./api/tabs.js";
 import * as tts from "./api/tts.js";
 import * as windows from "./api/windows.js";
+import * as scripts from "./background-scripts.js";
 
 /**
  * 因为MV3中无法执行eval.call，因此需要使用新的方式执行预定义的后台脚本。
@@ -176,6 +177,48 @@ const BG_COMMAND_HANDLERS = {
   'api_windows_getLastFocused': windows.getLastFocused,
   'api_windows_remove'      : windows.remove,
   'api_windows_update'      : windows.update,
+
+  // scripts API
+  'scripts_closeOtherTabs'    : scripts.closeOtherTabs,
+  'scripts_closeLeftTabs'     : scripts.closeLeftTabs,
+  'scripts_closeRightTabs'    : scripts.closeRightTabs,
+  'scripts_closeDuplicateTabs': scripts.closeDuplicateTabs,
+  'scripts_switchToLeftTab'     : scripts.switchToLeftTab,
+  'scripts_switchToRightTab'    : scripts.switchToRightTab,
+  'scripts_switchToFirstTab'    : scripts.switchToFirstTab,
+  'scripts_switchToLastTab'     : scripts.switchToLastTab,
+  'scripts_moveTabToStart'      : scripts.moveTabToStart,
+  'scripts_moveTabToEnd'        : scripts.moveTabToEnd,
+  'scripts_moveTabRight'        : scripts.moveTabRight,
+  'scripts_moveTabLeft'         : scripts.moveTabLeft,
+  'scripts_toggleMuteTab'       : scripts.toggleMuteTab,
+  'scripts_togglePinTab'        : scripts.togglePinTab,
+  'scripts_pinCurrentTab'       : scripts.pinCurrentTab,
+  'scripts_addBookmarkForCurrentTab'    : scripts.addBookmarkForCurrentTab,
+  'scripts_removeBookmarkForCurrentTab' : scripts.removeBookmarkForCurrentTab,
+  'scripts_openBookmarksManager'        : scripts.openBookmarksManager,
+  'scripts_goToParentDirectory'         : scripts.goToParentDirectory,
+  'scripts_scrollUp'            : scripts.scrollUp,
+  'scripts_scrollDown'          : scripts.scrollDown,
+  'scripts_scrollToTop'         : scripts.scrollToTop,
+  'scripts_scrollToBottom'      : scripts.scrollToBottom,
+  'scripts_scrollLeft'          : scripts.scrollLeft,
+  'scripts_scrollRight'         : scripts.scrollRight,
+  'scripts_reloadTab'           : scripts.reloadTab,
+  'scripts_forceReloadTab'      : scripts.forceReloadTab,
+  'scripts_reloadAllTabs'       : scripts.reloadAllTabs,
+  'scripts_reopenClosedTab'     : scripts.reopenClosedTab,
+  'scripts_createNewTab'        : scripts.createNewTab,
+  'scripts_duplicateCurrentTab' : scripts.duplicateCurrentTab,
+  'scripts_detachCurrentTab'    : scripts.detachCurrentTab,
+  'scripts_createNewWindow'     : scripts.createNewWindow,
+  'scripts_createNewIncognitoWindow' : scripts.createNewIncognitoWindow,
+  'scripts_createNewWindowWithUrls'  : scripts.createNewWindowWithUrls,
+  'scripts_closeOtherWindows'   : scripts.closeOtherWindows,
+  'scripts_mergeAllWindows'     : scripts.mergeAllWindows,
+  'scripts_closelastFocusedWindow'   : scripts.closelastFocusedWindow,
+  'scripts_closeAllWindows'     : scripts.closeAllWindows,
+  'scripts_toggleFullscreen'    : scripts.toggleFullscreen,
 }
 
 //////////////////////////////////////////////////command handlers/////////////////////////////////////////////////////////////////////
