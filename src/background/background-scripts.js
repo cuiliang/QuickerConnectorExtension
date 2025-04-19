@@ -244,7 +244,7 @@ async function moveTabLeft() {
 /**
  * 切换当前标签页静音状态
  */
-async function toggleMuteTab() {
+async function toggleTabMute() {
     const currentTab = await getCurrentTab();
     // 检查 tab 是否存在以及是否有 mutedInfo 属性
     if (currentTab && currentTab.id && typeof currentTab.mutedInfo?.muted !== 'undefined') {
@@ -259,7 +259,7 @@ async function toggleMuteTab() {
 /**
  * 切换当前标签页固定状态
  */
-async function togglePinTab() {
+async function toggleTabPin() {
     const currentTab = await getCurrentTab();
     // 检查 tab 是否存在以及是否有 pinned 属性
     if (currentTab && currentTab.id && typeof currentTab.pinned === 'boolean') {
@@ -674,7 +674,7 @@ async function createNewIncognitoWindow() {
 /**
  * 关闭当前窗口
  */
-async function closelastFocusedWindow() {
+async function closeLastFocusedWindow() {
     const lastFocusedWindow = await chrome.windows.getLastFocused(); // 不需要 populate
     if (lastFocusedWindow && lastFocusedWindow.id) {
          try {
@@ -749,15 +749,13 @@ export {
   moveTabRight,
   moveTabLeft,
   // 标签页状态
-  toggleMuteTab,
-  togglePinTab,
+  toggleTabMute,
+  toggleTabPin,
   pinCurrentTab, // 保留明确的 pin 操作
   // 书签与导航
   addBookmarkForCurrentTab,
   removeBookmarkForCurrentTab,
   openBookmarksManager,
-  // goBack, // 未定义
-  // goForward, // 未定义
   goToParentDirectory,
   // 滚动
   scrollUp,
@@ -781,7 +779,7 @@ export {
   createNewWindowWithUrls,
   closeOtherWindows,
   mergeAllWindows,
-  closelastFocusedWindow,
+  closeLastFocusedWindow,
   closeAllWindows,
   toggleFullscreen
 }
