@@ -43,12 +43,12 @@
     "tts",
     "scripting",
     "userScripts",
-    "activeTab"
+    "activeTab",
+    "downloads"
   ],
   "optional_permissions": [
     "bookmarks",
     "browsingData",
-    "downloads",
     "history",
     "pageCapture",
     "cookies",
