@@ -12,7 +12,7 @@
  * @param {string} [commandParams.filename] 保存的文件名（可选）
  * @param {object} msg 消息对象
  */
-async function qk_download_file(commandParams, msg) {
+async function downloadFile(commandParams, msg) {
     try {
       const { url, filename } = commandParams;
   
@@ -47,7 +47,7 @@ async function qk_download_file(commandParams, msg) {
    * @param {string} [commandParams.titlePattern] 匹配标签页标题的模式 (支持通配符 *)
    * @param {object} msg 消息对象
    */
-  async function qk_find_tabs(commandParams, msg) {
+  async function findTabs(commandParams, msg) {
     try {
       const { urlPattern, titlePattern } = commandParams;
   
@@ -100,7 +100,7 @@ async function qk_download_file(commandParams, msg) {
    * @param {string} commandParams.replacement 替换字符串
    * @param {object} msg 消息对象
    */
-  async function qk_replace_title(commandParams, msg) {
+  async function replaceTabsTitle(commandParams, msg) {
     try {
       const { pattern, replacement } = commandParams;
   
@@ -108,51 +108,104 @@ async function qk_download_file(commandParams, msg) {
         throw new Error("必须提供正则表达式模式和替换字符串");
       }
   
-      // 获取当前活动标签页
-      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      // 获取所有标签页
+      const allTabs = await chrome.tabs.query({});
   
-      if (!activeTab) {
-        throw new Error("找不到活动标签页");
-      }
-      if (!activeTab.id) {
-          throw new Error("活动标签页没有ID");
-      }
+      let modifiedCount = 0;
+      let skippedCount = 0; // 因不匹配或无ID而跳过
+      let failedCount = 0;
+      const errors = [];
   
-      // 注入脚本来修改标题
-      await chrome.scripting.executeScript({
-        target: { tabId: activeTab.id },
-        func: (patternStr, replacementStr) => {
+      const scriptFunc = (patternStr, replacementStr) => {
           try {
-            const regex = new RegExp(patternStr, 'g'); // 'g' for global replacement
-            document.title = document.title.replace(regex, replacementStr);
-            return { success: true, newTitle: document.title }; // 返回修改后的标题
+            // 'u' flag for unicode support might be useful depending on titles
+            const regex = new RegExp(patternStr, 'gu'); 
+            if (regex.test(document.title)) {
+              const oldTitle = document.title;
+              const newTitle = oldTitle.replace(regex, replacementStr);
+              // 仅在标题实际更改时才更新，避免不必要的 DOM 操作
+              if (newTitle !== oldTitle) {
+                 document.title = newTitle;
+                 return { changed: true, newTitle: document.title };
+              } else {
+                 return { changed: false, reason: "替换结果与原标题相同" };
+              }
+            } else {
+              return { changed: false, reason: "标题不匹配模式" };
+            }
           } catch (e) {
-            // 处理正则表达式错误或其他错误
-            console.error('替换标题时出错:', e);
-            // 需要一种方式将错误传回，但 executeScript 的结果处理比较复杂
-            // 这里简单地在 content script 中 log 错误
-            throw new Error(`替换标题脚本执行失败: ${e.message}`); 
+            console.error('标签页标题替换脚本执行失败:', e);
+            // 将脚本内部错误传递回 background
+            return { error: `脚本执行失败: ${e.message}` }; 
           }
-        },
-        args: [pattern, replacement]
-      });
+        };
   
-      // executeScript 不直接返回 func 的返回值到 background script，
-      // 如果需要获取新标题，需要更复杂的通信机制（如消息传递）或检查注入结果。
-      // 这里我们假设执行成功即可。
-      console.log(`尝试替换标签页 ${activeTab.id} 的标题`);
-      return { success: true, message: "标题替换脚本已执行" };
+      for (const tab of allTabs) {
+        if (!tab.id) {
+          console.log(`跳过没有 ID 的标签页: ${tab.url || '未知 URL'}`);
+          skippedCount++;
+          continue;
+        }
+  
+        try {
+          // 注入脚本到每个标签页
+          const results = await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: scriptFunc,
+            args: [pattern, replacement]
+          });
+  
+          // executeScript 返回一个结果数组，通常包含一个主框架的结果
+          if (results && results[0] && results[0].result) {
+            const result = results[0].result;
+            if (result.error) {
+               console.warn(`标签页 ${tab.id} (${tab.title}) 脚本执行出错: ${result.error}`);
+               failedCount++;
+               errors.push({ tabId: tab.id, title: tab.title, url: tab.url, error: result.error });
+            } else if (result.changed) {
+               console.log(`标签页 ${tab.id} (${tab.title}) 标题已修改为: ${result.newTitle}`);
+               modifiedCount++;
+            } else {
+               // console.log(`标签页 ${tab.id} (${tab.title}) 未修改: ${result.reason}`);
+               skippedCount++;
+            }
+          } else {
+              // 处理没有结果或结果格式不符合预期的情况
+              console.warn(`标签页 ${tab.id} (${tab.title}) 脚本执行未返回有效结果。`, results);
+              // 可能是由于页面限制（如 chrome:// URLs）或权限问题，虽然 executeScript 本身可能不抛错
+              failedCount++;
+              errors.push({ tabId: tab.id, title: tab.title, url: tab.url, error: "脚本执行未返回有效结果" });
+          }
+  
+        } catch (error) {
+          // 处理注入脚本时的错误（例如，无法访问页面）
+          console.error(`处理标签页 ${tab.id} (${tab.title}) 时出错: ${error.message}`, error);
+          failedCount++;
+           errors.push({ tabId: tab.id, title: tab.title, url: tab.url, error: `注入脚本失败: ${error.message}` });
+           // 可以根据 error.message 进一步细化错误原因
+        }
+      }
+  
+      const message = `标题替换操作完成: ${modifiedCount} 个标签页被修改, ${skippedCount} 个标签页未匹配或跳过, ${failedCount} 个标签页处理失败。`;
+      console.log(message);
+      if (failedCount > 0) {
+          console.warn('失败详情:', errors);
+      }
+  
+      return {
+          success: true, // 操作本身是成功的，即使部分标签页失败
+          message: message,
+          modifiedCount: modifiedCount,
+          skippedCount: skippedCount,
+          failedCount: failedCount,
+          errors: failedCount > 0 ? errors : undefined // 仅在有错误时返回错误详情
+       };
   
     } catch (error) {
-      console.error('替换标题失败:' + error.message, error);
-      // 特别处理脚本注入错误
-      if (error.message.includes("Cannot access contents of url")) {
-           throw new Error(`替换标题失败: 无法访问当前页面的内容 (${error.message})。可能是权限问题或页面限制。`);
-      }
-       if (error.message.includes("No tab with id")) {
-           throw new Error(`替换标题失败: 找不到ID为 ${commandParams.tabId} 的标签页。`);
-      }
-      throw new Error(`替换标题失败: ${error.message}`);
+      // 处理函数级别的错误（例如参数错误，查询标签页失败）
+      console.error('执行 replaceTabsTitle 时发生意外错误:', error);
+      // 让调用者知道整个操作失败了
+      throw new Error(`替换所有标签页标题时发生错误: ${error.message}`);
     }
   }
   
@@ -167,7 +220,7 @@ async function qk_download_file(commandParams, msg) {
    * @param {string} [commandParams.responseType='text'] 期望的响应类型 ('text', 'json', 'arraybuffer', 'blob')
    * @param {object} msg 消息对象
    */
-  async function qk_send_http_request(commandParams, msg) {
+  async function sendHttpRequest(commandParams, msg) {
     try {
       const {
         url,

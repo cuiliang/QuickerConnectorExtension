@@ -1144,6 +1144,154 @@ async function mergeAllWindowsAndGroupByDomain() {
     }
 }
 
+/**
+ * 解散当前标签页所在的分组
+ */
+async function ungroupCurrentTabGroup() {
+    const { window: win, activeTab: currentTab } = await getWindowAndActiveTab();
+    // Check if we have a valid tab and it belongs to a group
+    if (!win || !currentTab || !currentTab.id || currentTab.groupId === chrome.tabs.TAB_ID_NONE) {
+        console.log("Current tab is not in a group or tab/window is invalid.");
+        return;
+    }
+
+    const groupId = currentTab.groupId;
+    try {
+        // Find all tabs in the same group within the current window
+        const tabsInGroup = await chrome.tabs.query({ groupId: groupId, windowId: win.id });
+        const tabIdsToUngroup = tabsInGroup.map(t => t.id).filter(id => id !== undefined);
+
+        if (tabIdsToUngroup.length > 0) {
+            await chrome.tabs.ungroup(tabIdsToUngroup);
+            console.log(`Ungrouped ${tabIdsToUngroup.length} tabs from group ${groupId}.`);
+        } else {
+            console.log(`No tabs found to ungroup for group ${groupId} in window ${win.id}.`); // Should theoretically not happen if currentTab was in the group
+        }
+    } catch (error) {
+        console.error(`Failed to ungroup tabs for group ${groupId}:`, error);
+    }
+}
+
+/**
+ * 关闭所有窗口中的重复标签页 (保留最后一个打开的，不关闭固定的)
+ */
+async function closeDuplicateTabsAll() {
+    const allWindows = await chrome.windows.getAll({ populate: true });
+    const removePromises = [];
+
+    for (const win of allWindows) {
+        if (!win.tabs) continue; // Skip if window has no tabs (shouldn't happen with populate: true)
+
+        const urlMap = new Map();
+        const tabsToRemove = [];
+
+        // 从右到左遍历当前窗口的标签页
+        for (let i = win.tabs.length - 1; i >= 0; i--) {
+            const tab = win.tabs[i];
+            // 跳过固定的标签页和没有 URL 的特殊页面
+            if (tab.pinned || !tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('about:') || tab.url.startsWith('edge://') || tab.url.startsWith('file://')) continue;
+
+            if (urlMap.has(tab.url)) {
+                // 如果已记录此 URL 且当前标签页不是固定的，则将其加入待移除列表
+                if (tab.id !== undefined) {
+                    tabsToRemove.push(tab.id);
+                }
+            } else {
+                // 否则，记录此 URL 对应的（最后一个遇到的）标签页 ID
+                urlMap.set(tab.url, tab.id);
+            }
+        }
+
+        if (tabsToRemove.length > 0) {
+            console.log(`Window ${win.id}: Found ${tabsToRemove.length} duplicate tabs to remove.`);
+            // Type assertion to filter undefined although the check is above
+            const validIdsToRemove = tabsToRemove.filter(id => typeof id === 'number');
+            if (validIdsToRemove.length > 0) {
+                 removePromises.push(
+                    chrome.tabs.remove(validIdsToRemove)
+                        .then(() => console.log(`Window ${win.id}: Successfully removed ${validIdsToRemove.length} tabs.`))
+                        .catch(error => console.warn(`Window ${win.id}: Failed to remove some duplicate tabs: ${error.message}`))
+                );
+            }
+        }
+    }
+
+    await Promise.allSettled(removePromises);
+    console.log("Finished processing duplicate tabs across all windows.");
+}
+
+/**
+ * 将与当前活动标签页相同域名的标签页（从其他窗口）移动到当前窗口
+ */
+async function moveSameDomainTabsToCurrentWindow() {
+    const { window: currentWindow, activeTab: currentTab } = await getWindowAndActiveTab();
+    if (!currentWindow || !currentTab || !currentTab.url || !currentTab.id) {
+        console.log("Cannot perform operation: Invalid current window or tab.");
+        return;
+    }
+
+    let currentDomain = '';
+    try {
+        // 忽略 chrome://, about:, file:// 等特殊协议
+        if (currentTab.url.startsWith('http:') || currentTab.url.startsWith('https:')) {
+             currentDomain = new URL(currentTab.url).hostname;
+        }
+        if (!currentDomain) {
+             console.log("Cannot determine domain for the current tab:", currentTab.url);
+             return;
+        }
+    } catch (e) {
+        console.error("Failed to parse URL for current tab:", currentTab.url, e);
+        return;
+    }
+
+    console.log(`Looking for tabs with domain: ${currentDomain} in other windows.`);
+    const allWindows = await chrome.windows.getAll({ populate: true });
+    const tabsToMove = [];
+
+    for (const win of allWindows) {
+        // Skip the current window and windows without tabs
+        if (win.id === currentWindow.id || !win.tabs) continue;
+        // Skip incognito windows if the current window is not incognito
+        if (win.incognito && !currentWindow.incognito) continue;
+        // Skip non-incognito windows if the current window is incognito
+        if (!win.incognito && currentWindow.incognito) continue;
+
+
+        for (const tab of win.tabs) {
+            // Skip pinned tabs, the tab being moved (shouldn't happen here), and tabs without valid IDs or URLs
+            if (tab.pinned || !tab.id || !tab.url) continue;
+
+            try {
+                // Only consider http/https URLs for domain matching
+                if (tab.url.startsWith('http:') || tab.url.startsWith('https:')) {
+                    const tabDomain = new URL(tab.url).hostname;
+                    if (tabDomain === currentDomain) {
+                         // Ensure tab.id is a number before adding
+                        if (typeof tab.id === 'number') {
+                            tabsToMove.push(tab.id);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn(`Failed to parse URL or check domain for tab: ${tab.url}`, e);
+                // Continue with the next tab
+            }
+        }
+    }
+
+    if (tabsToMove.length > 0) {
+        console.log(`Found ${tabsToMove.length} tabs with domain ${currentDomain} to move.`);
+        try {
+            await chrome.tabs.move(tabsToMove, { windowId: currentWindow.id, index: -1 }); // Move to the end
+            console.log(`Successfully moved ${tabsToMove.length} tabs to window ${currentWindow.id}.`);
+        } catch (error) {
+            console.error(`Failed to move tabs to window ${currentWindow.id}:`, error);
+        }
+    } else {
+        console.log(`No tabs found with domain ${currentDomain} in other windows.`);
+    }
+}
 
 // --- 导出 ---
 
@@ -1216,5 +1364,8 @@ export {
   openBlankPage,
   // 分组
   groupTabsByDomainInCurrentWindow,
-  mergeAllWindowsAndGroupByDomain
+  mergeAllWindowsAndGroupByDomain,
+  ungroupCurrentTabGroup,
+  closeDuplicateTabsAll,
+  moveSameDomainTabsToCurrentWindow
 }
