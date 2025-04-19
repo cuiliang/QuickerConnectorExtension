@@ -119,7 +119,7 @@ function getProperty(obj, path) {
  * 根据 filter 参数处理 API 的原始返回结果。
  * @param {*} apiResult - Chrome API 的原始返回结果 (可以是对象或数组)。
  * @param {string|null|undefined} filterString - 描述所需属性的过滤字符串，
- * 每行一个属性路径，支持 \n, \r\n, \r 作为换行符。
+ * 每行一个属性路径，支持 \n, \r\n, \r ,，;；作为换行符。
  * @returns {*} 处理后的结果。
  */
 export function filterValue(apiResult, filterString) {
@@ -131,7 +131,7 @@ export function filterValue(apiResult, filterString) {
   // 解析 filter 字符串，获取属性路径列表
   // 使用正则表达式分割，匹配一个或多个 \r 或 \n
   const propertiesToExtract = filterString
-    .split(/[\r\n；;]+/) // <-- 修改点在这里
+    .split(/[\r\n；;,，]+/) // <-- 修改点在这里
     .map(line => line.trim()) // 对分割后的每一部分进行 trim
     .filter(line => line.length > 0); // 过滤掉空行
 
