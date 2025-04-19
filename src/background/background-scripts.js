@@ -1,5 +1,5 @@
 /*
- * 封装常用的标签页管理功能
+ * 封装常用的脚本
  */
 
 'use strict';
@@ -1034,6 +1034,117 @@ async function openBlankPage() {
     await chrome.tabs.create({ url });
 }
 
+// --- 标签页分组 ---
+
+/**
+ * 将当前窗口的标签页按域名分组（忽略只有一个标签页的域名和固定标签页）
+ */
+async function groupTabsByDomainInCurrentWindow() {
+    const { window: win } = await getWindowAndActiveTab();
+    if (!win || !win.id || !win.tabs) return;
+
+    const tabsToGroup = win.tabs.filter(tab =>
+        !tab.pinned && tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('about:') && !tab.url.startsWith('edge://') && !tab.url.startsWith('file://') && !tab.incognito // Don't group incognito tabs for now
+    );
+
+    const tabsByDomain = new Map();
+    for (const tab of tabsToGroup) {
+        try {
+            const url = new URL(tab.url);
+            const domain = url.hostname;
+            if (!domain) continue; // Skip if no domain
+
+            if (!tabsByDomain.has(domain)) {
+                tabsByDomain.set(domain, []);
+            }
+            // Ensure tab.id is defined before pushing
+            if (tab.id !== undefined) {
+                 tabsByDomain.get(domain).push(tab.id);
+            }
+
+        } catch (e) {
+            console.warn(`Invalid URL encountered while grouping: ${tab.url}`, e);
+        }
+    }
+
+    const groupPromises = [];
+    for (const [domain, tabIds] of tabsByDomain.entries()) {
+        if (tabIds.length > 1) {
+            // Ensure all tab IDs are valid numbers
+            const validTabIds = tabIds.filter(id => typeof id === 'number');
+            if (validTabIds.length > 1) {
+                 console.log(`Grouping ${validTabIds.length} tabs for domain: ${domain}`);
+                groupPromises.push(
+                    chrome.tabs.group({ tabIds: validTabIds, createProperties: { windowId: win.id } })
+                        .then(groupId => {
+                             if (groupId) {
+                                return chrome.tabGroups.update(groupId, { title: domain, collapsed: true }); // Collapse new groups by default
+                             }
+                        })
+                        .catch(e => console.error(`Failed to group tabs for domain ${domain}:`, e))
+                );
+            }
+        }
+    }
+
+    await Promise.all(groupPromises);
+    console.log("Tab grouping process completed.");
+}
+
+
+/**
+ * 合并所有窗口的标签页到当前窗口，并按域名分组排序
+ */
+async function mergeAllWindowsAndGroupByDomain() {
+    const { window: currentWindow } = await getWindowAndActiveTab();
+    if (!currentWindow || !currentWindow.id) return;
+    const currentWindowId = currentWindow.id;
+
+    console.log("Starting mergeAllWindows...");
+    await mergeAllWindows(); // Wait for merging to complete
+    console.log("Merging windows finished. Starting grouping...");
+
+    // Group tabs in the now merged window
+    await groupTabsByDomainInCurrentWindow();
+    console.log("Grouping finished. Starting sorting...");
+
+
+    // --- Sorting groups ---
+    try {
+        const groups = await chrome.tabGroups.query({ windowId: currentWindowId });
+
+        // Filter out groups without titles (shouldn't happen based on above logic, but safeguard)
+        // and sort alphabetically by title (domain name)
+        const sortedGroups = groups
+            .filter(g => g.title)
+            .sort((a, b) => a.title.localeCompare(b.title));
+
+        // Move groups to their sorted positions
+        // Moving needs to be done sequentially to maintain relative order
+        for (let i = 0; i < sortedGroups.length; i++) {
+            const group = sortedGroups[i];
+             // Check if the group still exists and is in the correct window before moving
+             try {
+                 const currentGroupState = await chrome.tabGroups.get(group.id);
+                 if (currentGroupState.windowId === currentWindowId && currentGroupState.index !== i) {
+                     await chrome.tabGroups.move(group.id, { index: i, windowId: currentWindowId });
+                     console.log(`Moved group "${group.title}" to index ${i}`);
+                 } else if (currentGroupState.windowId !== currentWindowId) {
+                     console.warn(`Group "${group.title}" is no longer in the target window.`);
+                 }
+             } catch (getErr) {
+                 // Group might have been removed or modified between query and move
+                  console.warn(`Could not get state or move group ${group.id} ("${group.title}"):`, getErr);
+             }
+        }
+        console.log("Group sorting finished.");
+
+    } catch (error) {
+        console.error("Error sorting tab groups:", error);
+    }
+}
+
+
 // --- 导出 ---
 
 export {
@@ -1102,5 +1213,8 @@ export {
   openFlagsPage,
   openAboutPage,
   openVersionPage,
-  openBlankPage
+  openBlankPage,
+  // 分组
+  groupTabsByDomainInCurrentWindow,
+  mergeAllWindowsAndGroupByDomain
 }

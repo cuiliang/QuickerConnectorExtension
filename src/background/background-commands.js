@@ -13,8 +13,6 @@ import * as tabs from "./api/tabs.js";
 import * as tts from "./api/tts.js";
 import * as windows from "./api/windows.js";
 import * as scripts from "./background-scripts.js";
-// 导入缩放函数
-import { pageZoomIn, pageZoomOut } from './background-scripts.js';
 
 /**
  * 因为MV3中无法执行eval.call，因此需要使用新的方式执行预定义的后台脚本。
@@ -236,6 +234,9 @@ const BG_COMMAND_HANDLERS = {
   'scripts_openAboutPage'                  : scripts.openAboutPage,
   'scripts_openVersionPage'                : scripts.openVersionPage,
   'scripts_openBlankPage'                  : scripts.openBlankPage,
+  // Tab Grouping
+  'scripts_groupTabsByDomain'             : scripts.groupTabsByDomainInCurrentWindow,
+  'scripts_mergeAndGroupTabsByDomain'     : scripts.mergeAllWindowsAndGroupByDomain,
 }
 
 //////////////////////////////////////////////////command handlers/////////////////////////////////////////////////////////////////////
