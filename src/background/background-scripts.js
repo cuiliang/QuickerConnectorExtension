@@ -730,6 +730,310 @@ async function toggleFullscreen() {
     }
 }
 
+// --- 缩放功能 ---
+
+const ZOOM_LEVELS = [0.3, 0.5, 0.67, 0.8, 0.9, 1, 1.1, 1.2, 1.33, 1.5, 1.7, 2, 2.4, 3];
+const MAX_ZOOM = 3;
+const MIN_ZOOM = 0.3;
+
+/**
+ * 放大页面
+ * @param {object} commandParams 
+ * @param {object} msg 
+ * @returns 
+ */
+async function pageZoomIn(commandParams, msg) {
+  // 注意：此函数现在在 scripts 文件中，msg 可能不可用或需要调整
+  // 暂时假设可以直接获取 tabId
+  const currentTab = await getCurrentTab();
+  if (!currentTab || !currentTab.id) {
+    console.warn("pageZoomIn: Could not get current tab ID.");
+    return; 
+  }
+  const tabId = currentTab.id;
+
+  const currentZoom = await chrome.tabs.getZoom(tabId);
+  let newZoom = ZOOM_LEVELS.find(level => level > currentZoom) || MAX_ZOOM;
+  newZoom = Math.min(newZoom, MAX_ZOOM);
+
+  if (newZoom > currentZoom) {
+    return chrome.tabs.setZoom(tabId, newZoom);
+  }
+}
+
+/**
+ * 缩小页面
+ * @param {object} commandParams 
+ * @param {object} msg 
+ * @returns 
+ */
+async function pageZoomOut(commandParams, msg) {
+   // 注意：此函数现在在 scripts 文件中，msg 可能不可用或需要调整
+  // 暂时假设可以直接获取 tabId
+  const currentTab = await getCurrentTab();
+  if (!currentTab || !currentTab.id) {
+    console.warn("pageZoomOut: Could not get current tab ID.");
+    return; 
+  }
+  const tabId = currentTab.id;
+
+  const currentZoom = await chrome.tabs.getZoom(tabId);
+  // 反转数组查找
+  const reversedZoomLevels = [...ZOOM_LEVELS].reverse();
+  let newZoom = reversedZoomLevels.find(level => level < currentZoom) || MIN_ZOOM;
+  newZoom = Math.max(newZoom, MIN_ZOOM);
+
+  if (newZoom < currentZoom) {
+    return chrome.tabs.setZoom(tabId, newZoom);
+  }
+}
+
+// --- 下载与浏览器页面 ---
+
+/**
+ * 关闭当前标签页并激活左侧标签页 (如果存在)
+ */
+async function closeCurrentTabAndActivateLeft() {
+    const { window: win, activeTab: currentTab } = await getWindowAndActiveTab();
+    if (!win || !currentTab || !currentTab.id) return;
+
+    let targetTabId = null;
+    let targetTabIndex = currentTab.index - 1;
+
+    // 处理循环和固定标签页
+    if (targetTabIndex < 0) {
+        targetTabIndex = win.tabs.length - 1; // 循环到最后一个
+    }
+
+    const targetTab = win.tabs.find(tab => tab.index === targetTabIndex);
+    if (targetTab && targetTab.id) {
+        targetTabId = targetTab.id;
+    } else {
+        // 如果左侧找不到合适的标签（例如都是固定的），尝试向右查找第一个可激活的标签
+        // 或者干脆就不激活，让浏览器自己决定
+        // 这里选择不激活，仅关闭当前页
+        console.log("No suitable tab found to the left. Only closing the current tab.");
+    }
+
+    try {
+        await chrome.tabs.remove(currentTab.id);
+        if (targetTabId) {
+            await chrome.tabs.update(targetTabId, { active: true });
+        }
+    } catch (error) {
+        console.error(`Error closing tab ${currentTab.id} or activating tab ${targetTabId}:`, error);
+    }
+}
+
+/**
+ * 用无痕模式打开当前标签页网址
+ */
+async function openCurrentTabInIncognito() {
+    const currentTab = await getCurrentTab();
+    if (currentTab && currentTab.url && !currentTab.url.startsWith('chrome:') && !currentTab.url.startsWith('about:')) {
+        try {
+            await chrome.windows.create({ url: currentTab.url, incognito: true });
+            // 可选：关闭原标签页
+            // if (currentTab.id) {
+            //     await chrome.tabs.remove(currentTab.id);
+            // }
+        } catch (error) {
+            console.error(`Failed to open ${currentTab.url} in incognito:`, error);
+        }
+    } else if (currentTab) {
+        console.log("Cannot open this type of URL in incognito:", currentTab.url);
+    }
+}
+
+/**
+ * 打开下载文件夹
+ */
+async function openDownloadsFolder() {
+    try {
+        // 检查 API 是否存在
+        if (chrome.downloads && chrome.downloads.showDefaultFolder) {
+            chrome.downloads.showDefaultFolder();
+        } else {
+             console.error("chrome.downloads.showDefaultFolder API is not available.");
+             // 可以考虑用 openDownloadsPage 作为备选方案
+             await openDownloadsPage();
+        }
+    } catch (error) {
+        console.error("Failed to open downloads folder:", error);
+    }
+}
+
+/**
+ * 在文件管理器中显示（定位）最后下载的文件
+ */
+async function showLastDownloadedFile() {
+    try {
+         // 检查 API 是否存在
+        if (!chrome.downloads || !chrome.downloads.search || !chrome.downloads.show) {
+            console.error("Required chrome.downloads APIs are not available.");
+            return;
+        }
+        const downloads = await chrome.downloads.search({
+            limit: 1,
+            orderBy: ['-startTime'],
+            exists: true // 只查找存在的文件
+        });
+
+        if (downloads && downloads.length > 0 && downloads[0].id) {
+            chrome.downloads.show(downloads[0].id);
+        } else {
+            console.log("No recent completed downloads found.");
+            // 可选：通知用户
+        }
+    } catch (error) {
+        console.error("Failed to find or show last downloaded file:", error);
+    }
+}
+
+// --- 浏览器特定页面 ---
+
+/**
+ * 获取当前浏览器的信息（主要是名字，用于构造 URL）
+ * @returns {Promise<{name: string}>}
+ */
+async function getBrowserInfo() {
+    // Firefox / WebExtensions 标准 API
+    if (typeof browser !== 'undefined' && browser.runtime && browser.runtime.getBrowserInfo) {
+        try {
+            const info = await browser.runtime.getBrowserInfo();
+            return { name: info.name || 'firefox' }; // 默认为 firefox
+        } catch (e) {
+            console.warn("Failed to get browser info using browser.runtime.getBrowserInfo:", e);
+        }
+    }
+    // Chrome / Edge (Chromium based) - 检查 userAgent
+    const ua = navigator.userAgent.toLowerCase();
+    if (ua.includes('edg/')) {
+        return { name: 'edge' };
+    }
+    if (ua.includes('chrome/')) {
+         return { name: 'chrome' };
+    }
+    // 其他情况或无法检测，可以给个默认值或抛出错误
+    console.warn("Could not reliably detect browser type from User Agent:", navigator.userAgent);
+    return { name: 'chrome' }; // 默认 Chrome
+}
+
+/**
+ * 根据浏览器类型获取内部页面的 URL
+ * @param {'history' | 'downloads' | 'extensions' | 'settings' | 'bookmarks' | 'flags' | 'about' | 'version' | 'blank'} pageType
+ * @returns {Promise<string>}
+ */
+async function getBrowserSpecificUrl(pageType) {
+    const browserInfo = await getBrowserInfo();
+    const browserName = browserInfo.name.toLowerCase();
+
+    switch (browserName) {
+        case 'firefox':
+            switch (pageType) {
+                // Firefox 没有标准的 about:history, about:bookmarks
+                case 'history': return 'about:preferences#privacy'; // 链接到隐私设置中的历史记录部分
+                case 'downloads': return 'about:downloads';
+                case 'extensions': return 'about:addons';
+                case 'settings': return 'about:preferences';
+                case 'bookmarks': return 'about:preferences#privacy'; // 没有直接页面，指向库管理相关设置？或者提示用户手动打开
+                case 'flags': return 'about:config';
+                case 'about': return 'about:about';
+                case 'version': return 'about:support';
+                case 'blank': return 'about:blank';
+                default: return 'about:blank';
+            }
+        case 'edge':
+            switch (pageType) {
+                case 'history': return 'edge://history';
+                case 'downloads': return 'edge://downloads';
+                case 'extensions': return 'edge://extensions';
+                case 'settings': return 'edge://settings';
+                case 'bookmarks': return 'edge://favorites'; // Edge 叫 favorites
+                case 'flags': return 'edge://flags';
+                case 'about': return 'edge://about';
+                case 'version': return 'edge://version';
+                case 'blank': return 'about:blank'; // Edge 也支持 about:blank
+                default: return 'edge://newtab';
+            }
+        case 'chrome':
+        default: // 默认 Chrome
+            switch (pageType) {
+                case 'history': return 'chrome://history';
+                case 'downloads': return 'chrome://downloads';
+                case 'extensions': return 'chrome://extensions';
+                case 'settings': return 'chrome://settings';
+                case 'bookmarks': return 'chrome://bookmarks';
+                case 'flags': return 'chrome://flags';
+                case 'about': return 'chrome://about';
+                case 'version': return 'chrome://version';
+                case 'blank': return 'about:blank'; // Chrome 支持 about:blank
+                default: return 'chrome://newtab';
+            }
+    }
+}
+
+/** 打开历史记录页面 */
+async function openHistoryPage() {
+    const url = await getBrowserSpecificUrl('history');
+    await chrome.tabs.create({ url });
+}
+
+/** 打开下载页面 */
+async function openDownloadsPage() {
+    const url = await getBrowserSpecificUrl('downloads');
+    await chrome.tabs.create({ url });
+}
+
+/** 打开扩展管理页面 */
+async function openExtensionsPage() {
+    const url = await getBrowserSpecificUrl('extensions');
+    await chrome.tabs.create({ url });
+}
+
+/** 打开设置页面 */
+async function openSettingsPage() {
+    const url = await getBrowserSpecificUrl('settings');
+    await chrome.tabs.create({ url });
+}
+
+/** 打开书签/收藏夹页面 */
+async function openBookmarksPage() {
+    const url = await getBrowserSpecificUrl('bookmarks');
+    // 对于 Firefox，如果 URL 不是标准页面，可以选择不打开或提示
+    if (url && !(url.includes('about:preferences'))) { // 避免打开设置页
+         await chrome.tabs.create({ url });
+    } else if (url.includes('about:preferences')) {
+        console.log("Firefox does not have a dedicated 'about:bookmarks' page. Opening library settings instead or suggest manual access.");
+        // 可以在这里选择打开设置，或者不执行任何操作
+         await chrome.tabs.create({ url }); // 暂时还是打开设置页
+    }
+}
+
+/** 打开实验性功能页面 */
+async function openFlagsPage() {
+    const url = await getBrowserSpecificUrl('flags');
+    await chrome.tabs.create({ url });
+}
+
+/** 打开 "关于" 页面 (列出内部页面) */
+async function openAboutPage() {
+    const url = await getBrowserSpecificUrl('about');
+    await chrome.tabs.create({ url });
+}
+
+/** 打开版本信息页面 */
+async function openVersionPage() {
+    const url = await getBrowserSpecificUrl('version');
+    await chrome.tabs.create({ url });
+}
+
+/** 打开空白页面 */
+async function openBlankPage() {
+    const url = await getBrowserSpecificUrl('blank');
+    await chrome.tabs.create({ url });
+}
+
 // --- 导出 ---
 
 export {
@@ -738,6 +1042,7 @@ export {
   closeLeftTabs,
   closeRightTabs,
   closeDuplicateTabs,
+  closeCurrentTabAndActivateLeft,
   // 标签页切换
   switchToLeftTab,
   switchToRightTab,
@@ -757,6 +1062,7 @@ export {
   removeBookmarkForCurrentTab,
   openBookmarksManager,
   goToParentDirectory,
+  openCurrentTabInIncognito,
   // 滚动
   scrollUp,
   scrollDown,
@@ -781,5 +1087,20 @@ export {
   mergeAllWindows,
   closeLastFocusedWindow,
   closeAllWindows,
-  toggleFullscreen
+  toggleFullscreen,
+  // 缩放
+  pageZoomIn,
+  pageZoomOut,
+  // 下载与浏览器页面
+  openDownloadsFolder,
+  showLastDownloadedFile,
+  openHistoryPage,
+  openDownloadsPage,
+  openExtensionsPage,
+  openSettingsPage,
+  openBookmarksPage,
+  openFlagsPage,
+  openAboutPage,
+  openVersionPage,
+  openBlankPage
 }
