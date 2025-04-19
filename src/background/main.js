@@ -68,6 +68,14 @@ chrome.runtime.onInstalled.addListener(function (details) {
 	
 	// 安装脚本到已存在的标签页
 	installToExistingTabs();
+
+    if (details.reason === 'install' || details.reason === 'update') {
+        // 获取 whats_new.html 在扩展内的 URL
+        const url = chrome.runtime.getURL('whats_new.html');
+        // 打开新标签页
+        chrome.tabs.create({ url });
+        console.log(`Opened whats_new page because: ${details.reason}`);
+    }
 });
 
 
