@@ -69,12 +69,49 @@ chrome.runtime.onInstalled.addListener(function (details) {
 	// 安装脚本到已存在的标签页
 	installToExistingTabs();
 
-    if (details.reason === 'install' || details.reason === 'update') {
-        // 获取 whats_new.html 在扩展内的 URL
-        const url = chrome.runtime.getURL('whats_new.html');
-        // 打开新标签页
-        chrome.tabs.create({ url });
-        console.log(`Opened whats_new page because: ${details.reason}`);
+    // --- 判断是否打开 "What's New" 页面的逻辑 ---
+    let shouldOpenWhatsNew = false;
+
+    if (details.reason === 'install') {
+        // 首次安装时，通常也希望用户看到介绍或新功能页面
+        shouldOpenWhatsNew = true;
+
+    } else if (details.reason === 'update') {
+        const currentVersion = chrome.runtime.getManifest().version;
+        const previousVersion = details.previousVersion;
+
+        if (previousVersion) {
+            // 解析版本号 (例如 "1.2.3" -> ["1", "2", "3"])
+            const currentParts = currentVersion.split('.');
+            const previousParts = previousVersion.split('.');
+
+            // 比较主版本号 (a) 或次版本号 (b) 是否发生变化
+            // a.b.c => parts[0].parts[1].parts[2]
+            if (currentParts.length >= 2 && previousParts.length >= 2 &&
+                (currentParts[0] !== previousParts[0] || currentParts[1] !== previousParts[1]))
+            {
+                shouldOpenWhatsNew = true;
+                console.log(`Reason: Major or minor version update detected (${previousVersion} -> ${currentVersion}).`);
+            } else {
+                console.log(`Reason: Patch version update or no change in major/minor parts (${previousVersion} -> ${currentVersion}). Not opening whats_new.`);
+            }
+        } else {
+             // 如果没有 previousVersion，可能是一个特殊情况，保险起见可以打开
+             console.warn("Update reason but no previousVersion found. Opening whats_new as a fallback.");
+             shouldOpenWhatsNew = true;
+        }
+    }
+    // 'chrome_update' 或 'shared_module_update' 等其他原因不触发打开页面
+
+    // 如果判断需要打开页面
+    if (shouldOpenWhatsNew) {
+        try {
+            const url = chrome.runtime.getURL('whats_new.html');
+            chrome.tabs.create({ url });
+            console.log(`Opened whats_new page.`);
+        } catch (error) {
+            console.error("Error opening whats_new page:", error);
+        }
     }
 });
 
