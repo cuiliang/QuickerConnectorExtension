@@ -91,3 +91,90 @@ if (!Array.prototype.sortBy) {
     });
   };
 } 
+
+
+/**
+ * 根据提供的路径从对象中安全地获取嵌套属性的值。
+ * @param {object} obj - 源对象。
+ * @param {string} path - 属性路径 (例如 'a.b.c' 或 'url')。
+ * @returns {*} 属性的值，如果路径无效或未找到则返回 undefined。
+ */
+function getProperty(obj, path) {
+  if (typeof path !== 'string' || !obj) {
+    return undefined;
+  }
+  const pathSegments = path.split('.');
+  let current = obj;
+  for (let i = 0; i < pathSegments.length; i++) {
+    const segment = pathSegments[i];
+    if (current === null || typeof current !== 'object' || !(segment in current)) {
+      return undefined; // 路径无效或属性不存在
+    }
+    current = current[segment];
+  }
+  return current;
+}
+
+/**
+ * 根据 filter 参数处理 API 的原始返回结果。
+ * @param {*} apiResult - Chrome API 的原始返回结果 (可以是对象或数组)。
+ * @param {string|null|undefined} filterString - 描述所需属性的过滤字符串，
+ * 每行一个属性路径，支持 \n, \r\n, \r 作为换行符。
+ * @returns {*} 处理后的结果。
+ */
+export function filterValue(apiResult, filterString) {
+  // 如果没有提供 filter 或 filter 为空字符串，则返回原始结果
+  if (!filterString || typeof filterString !== 'string' || filterString.trim() === '') {
+    return apiResult;
+  }
+
+  // 解析 filter 字符串，获取属性路径列表
+  // 使用正则表达式分割，匹配一个或多个 \r 或 \n
+  const propertiesToExtract = filterString
+    .split(/[\r\n；;]+/) // <-- 修改点在这里
+    .map(line => line.trim()) // 对分割后的每一部分进行 trim
+    .filter(line => line.length > 0); // 过滤掉空行
+
+  // 如果没有有效的属性路径，也返回原始结果
+  if (propertiesToExtract.length === 0) {
+    return apiResult;
+  }
+
+  // --- 内部辅助函数：从单个项目（对象）中提取属性 ---
+  const extractFromItem = (item) => {
+    if (typeof item !== 'object' || item === null) {
+      return item; // 如果项目不是对象，无法提取，返回原样
+    }
+
+    // 情况 1: 只提取一个属性
+    if (propertiesToExtract.length === 1) {
+      return getProperty(item, propertiesToExtract[0]);
+    }
+
+    // 情况 2: 提取多个属性
+    const extractedObject = {};
+    propertiesToExtract.forEach(path => {
+      const value = getProperty(item, path);
+      // 使用路径的最后一部分作为新对象的键名
+      const key = path.split('.').pop();
+      if (key) {
+         extractedObject[key] = value;
+      }
+    });
+    return extractedObject;
+  };
+  // --- 辅助函数结束 ---
+
+  // 判断 apiResult 是数组还是对象
+  if (Array.isArray(apiResult)) {
+    // 如果 API 结果是数组，对每个元素应用提取逻辑
+    return apiResult.map(item => extractFromItem(item));
+  } else if (typeof apiResult === 'object' && apiResult !== null) {
+    // 如果 API 结果是对象，直接应用提取逻辑
+    return extractFromItem(apiResult);
+  } else {
+    // 其他情况返回原始结果
+    return apiResult;
+  }
+}
+

@@ -243,15 +243,16 @@ function sendHelloMessage() {
  * @param {integer} msgType 可选的消息类型。用于非命令响应的情况
  */
 export function sendReplyToQuicker(isSuccess, message, data, replyTo, msgType = MSG_COMMAND_RESP) {
-  // 如果返回的结果是简单类型，将其封装在对象中
-  if (data) {
-    if (typeof data !== "object") {
-      console.log('warpping data in object.', data);
-      data = {
-        data: data
-      };
-    }
-  }
+  // 20250419 不再自动封装data
+  // // 如果返回的结果是简单类型，将其封装在对象中
+  // if (data) {
+  //   if (typeof data !== "object") {
+  //     console.log('warpping data in object.', data);
+  //     data = {
+  //       data: data
+  //     };
+  //   }
+  // }
 
 
 

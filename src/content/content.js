@@ -82,7 +82,7 @@ function sendReplyToQuicker(isSuccess, message, data, replyTo) {
 		"message": message,
 		"data": data
 	};
-	_log('sending message to quicker:', msg);
+	_log('sending message to quicker from content page:', msg);
 
 	// 发送结果
 	sendToQuicker(msg);

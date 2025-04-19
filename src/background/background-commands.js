@@ -13,6 +13,7 @@ import * as tabs from "./api/tabs.js";
 import * as tts from "./api/tts.js";
 import * as windows from "./api/windows.js";
 import * as scripts from "./background-scripts.js";
+import { filterValue } from "./utils.js";
 
 /**
  * 因为MV3中无法执行eval.call，因此需要使用新的方式执行预定义的后台脚本。
@@ -33,6 +34,7 @@ import * as scripts from "./background-scripts.js";
 export async function runBackgroundCommand(msg) {
   const command = msg.data.command;
   const params = msg.data.commandParams;
+  const valueFilter = msg.data.valueFilter;
 
   
   console.log('runBackgroundCommand', command, params);
@@ -46,6 +48,12 @@ export async function runBackgroundCommand(msg) {
 
   try{
      let result = await handler(params, msg);
+
+     // 如果只返回部分信息，则进行过滤
+     if (result && valueFilter) {
+      result = filterValue(result, valueFilter);
+     }
+
      sendReplyToQuicker(true, 'ok', result, msg.serial);
   }
   catch(e){

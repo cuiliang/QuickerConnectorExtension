@@ -47,7 +47,7 @@ function sendReplyToQuicker(isSuccess, message, data, replyTo) {
             data: processedData
         };
 
-    _log('sendReplyToQuicker:', messageToSend);
+    _log('sendReplyToQuicker from user script:', messageToSend);
     sendToQuicker(messageToSend);
 }
 
