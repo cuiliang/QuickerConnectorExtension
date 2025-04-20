@@ -255,7 +255,8 @@ function _x(STR_XPATH) {
     let result = await chrome.userScripts.execute({
       js: scriptSource,
       target: target,
-      world: world // MAIN, USER_SCRIPT.
+      world: world, // MAIN, USER_SCRIPT.
+      wordId: wordId
     });
 
 
