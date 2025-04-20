@@ -22,7 +22,7 @@ import {
 } from "./api-functions.js";
 
 import {runBackgroundCommand} from "./background-commands.js";
-import {runTabCommand} from "./tab-commands.js";
+import {runTabCommand} from "./tab/tab-commands.js";
 // 从types.js导入ChromeCommandMessage类型
 import './types.js';
 

@@ -1,0 +1,5 @@
+- **`<input>` 元素**：几乎所有类型的输入控件（如 `text`、`password`、`hidden`、`checkbox`、`radio`、`number` 等）都支持通过 `.val(value)` 来设置其 `value` 属性。
+- **`<select>` 元素**：包括普通单选和 `<select multiple>` 多选下拉列表。对于多选列表，`.val()` 返回一个包含所有被选中 `<option>` 值的数组；设置时，可传入数组或单个值。
+- **`<textarea>` 元素**：多行文本输入框，同样可通过 `.val(value)` 来设置其文本内容。
+- **`<option>` 元素**：虽然通常通过 `select` 元素的 `.val()` 进行批量操作，但也可单独对 `<option>`（如配合 `option:selected`）调用 `.val(value)` 来设置或获取该项的 `value` 属性。
+- **其他具有 `value` 属性的元素**：本质上，`.val(value)` 会直接操作 DOM 元素的 `value` 属性，因此任何自定义或扩展元素，只要其上存在 `value` 属性，也都可使用此方法。
