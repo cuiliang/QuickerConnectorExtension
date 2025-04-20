@@ -178,3 +178,20 @@ export function filterValue(apiResult, filterString) {
   }
 }
 
+/**
+ * 获取目标标签页
+ * @param {string} tabId 标签ID，如果未提供，则使用当前焦点tab
+ * @returns {Promise<chrome.tabs.Tab>} 标签信息
+ */
+export async function getTargetTab(tabId) {
+  if (tabId) {
+    return await chrome.tabs.get(tabId);
+  } else {
+    // 未提供tab的时候，使用当前焦点tab
+    const tabs = await chrome.tabs.query({lastFocusedWindow: true, active: true});
+    if (tabs.length < 1) {
+      throw new Error("Can not find active tab.");
+    }
+    return tabs[0];
+  }
+}

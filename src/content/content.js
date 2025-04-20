@@ -44,7 +44,7 @@ function _x(STR_XPATH) {
  * @param {*}} msg 
  */
 function sendToQuicker(msg) {
-	console.log('sending message to quicker from content page:', msg);
+	_log('sending message to quicker from content page:', msg);
 	chrome.runtime.sendMessage(
 		{
 			cmd: 'send_to_quicker',
@@ -82,7 +82,7 @@ function sendReplyToQuicker(isSuccess, message, data, replyTo) {
 		"message": message,
 		"data": data
 	};
-	_log('sending message to quicker from content page:', msg);
+	//_log('sending message to quicker from content page:', msg);
 
 	// 发送结果
 	sendToQuicker(msg);

@@ -1,20 +1,28 @@
 "use strict";
 
-import {MSG_COMMAND_RESP, MSG_PUSH_ACTIONS, MSG_REGISTER_CONTEXT_MENU, MSG_UPDATE_QUICKER_STATE} from './constants.js';
+import {MSG_PUSH_ACTIONS, MSG_REGISTER_CONTEXT_MENU, MSG_UPDATE_QUICKER_STATE} from './constants.js';
 import {executeOnTab, runScriptOnAllTabs, runScriptOnTab, setupActionsForAllTabs} from './tabs.js';
 import {updateConnectionState} from './ui.js';
-import {isChromeTabUrl} from './utils.js';
+import {getTargetTab} from './utils.js';
 import {reportUrlChange, sendReplyToQuicker} from "./connection.js";
 import {
-  createBookmark, deleteAllHistory,
+  createBookmark,
+  deleteAllHistory,
   downloadFile,
-  getBookmarks, getRecentlyClosed,
-  getTopSites, managementGetAll,
-  removeBrowsingData, restoreRecentClosedSession, saveAsMHTML,
-  searchBookmarks, sendDebuggerCommand, speekText
+  getBookmarks,
+  getRecentlyClosed,
+  getTopSites,
+  managementGetAll,
+  removeBrowsingData,
+  restoreRecentClosedSession,
+  saveAsMHTML,
+  searchBookmarks,
+  sendDebuggerCommand,
+  speekText
 } from "./api-functions.js";
 
 import {runBackgroundCommand} from "./background-commands.js";
+import {runTabCommand} from "./tab-commands.js";
 
 /**
  * 处理Quicker命令
@@ -22,13 +30,13 @@ import {runBackgroundCommand} from "./background-commands.js";
  */
 export function processQuickerCmd(msg) {
   let handler;
-  switch(msg.messageType){
+  switch (msg.messageType) {
     case MSG_UPDATE_QUICKER_STATE:
       handler = onMsgQuickerStateChange;
       break;
     case MSG_REGISTER_CONTEXT_MENU:
-       handler = onMessageRegisterContextMenu;
-       break;
+      handler = onMessageRegisterContextMenu;
+      break;
     case MSG_PUSH_ACTIONS:
       handler = onMessagePushActions;
       break;
@@ -40,11 +48,9 @@ export function processQuickerCmd(msg) {
 
 
   if (handler) {
-    try
-    {
+    try {
       handler(msg);
-    } catch (err)
-    {
+    } catch (err) {
       console.error(err);
       sendReplyToQuicker(false, err.message, err, msg.serial);
     }
@@ -65,9 +71,12 @@ const COMMAND_HANDLERS = {
   "GetTabInfo": getTabInfo,
   "CloseTab": closeTab,
 
+  
+
   // Script execution
-  "RunScript": runScript,
-  "BackgroundScript": runBackgroundScript,
+  "RunScript": runScript,                     // 对标签页执行脚本
+  "TabCommand": runTabCommand,                // 对标签页执行命令
+  "BackgroundScript": runBackgroundScript,    // 执行后台脚本
   "BackgroundCommand": runBackgroundCommand,  //MV3中因为无法执行eval.call，因此需要使用新的方式执行预定义的后台脚本。
 
   // Cookie management
@@ -129,11 +138,11 @@ function onMsgQuickerStateChange(msg) {
         { cmd: 'clear_actions' },
         function (response) {
           if (chrome.runtime.lastError) {
-             if (!chrome.runtime.lastError.message.includes("Receiving end does not exist")) {
-                console.warn(`Error sending 'clear_actions' to tab ${tab.id} during disconnect: ${chrome.runtime.lastError.message}`);
-             }
+            if (!chrome.runtime.lastError.message.includes("Receiving end does not exist")) {
+              console.warn(`Error sending 'clear_actions' to tab ${tab.id} during disconnect: ${chrome.runtime.lastError.message}`);
+            }
           }
-       });
+        });
     });
   }
 
@@ -243,7 +252,7 @@ async function getTabInfo(msg) {
     const tab = await getTargetTab(tabId);
     console.log('GetTabInfo', tabId, tab);
     sendReplyToQuicker(true, "", tab, msg.serial);
-    
+
   } catch (error) {
     console.error('获取标签信息出错:', error);
     sendReplyToQuicker(false, `获取标签信息失败: ${error.message}`, {}, msg.serial);
@@ -284,9 +293,9 @@ async function runScript(msg) {
   const tabId = msg.tabId;
   const script = msg.data.script;
 
-  console.log('running script on tab:',tabId, msg.data);
+  console.log('running script on tab:', tabId, msg.data);
 
-  try{
+  try {
     const tab = await getTargetTab(tabId);
     runScriptOnTab(tab.id, script, msg);
   } catch (error) {
@@ -294,25 +303,7 @@ async function runScript(msg) {
     sendReplyToQuicker(false, `执行脚本出错: ${error.message}`, {}, msg.serial);
   }
 
-  
 
-  // if (!tabId) {
-  //   chrome.tabs.query({ lastFocusedWindow: true, active: true }, function (tabs) {
-	// 		if (tabs.length < 1) {
-	// 			sendReplyToQuicker(false, "Can not find active tab.", {}, msg.serial);
-	// 			return;
-	// 		}
-
-	// 		if (isChromeTabUrl(tabs[0].url)) {
-	// 			sendReplyToQuicker(false, "Can not run on this page.", {}, msg.serial)
-	// 		} else {
-	// 			runScriptOnTab(tabs[0].id, script, msg);
-	// 		}
-
-	// 	});
-  // } else {
-  //   runScriptOnTab(tabId, script, msg);
-  // }
 }
 
 // 其他API功能函数的实现...
@@ -349,28 +340,12 @@ function removeCookiesByUrl(msg) {
  */
 function captureFullPage(msg) {
   // 为保持简洁，仅保留函数接口，具体实现略
-  executeOnTab(msg.tabId || msg, function(tabId, theMsg) {
+  executeOnTab(msg.tabId || msg, function (tabId, theMsg) {
     // 调用debugger API进行截图的核心逻辑...
     sendReplyToQuicker(true, "", "", msg.serial);
   });
-} 
-
-
-
-/**
- * 获取目标标签
- * @param {string} tabId 标签ID，如果未提供，则使用当前焦点tab
- * @returns {Promise<Object>} 标签信息
- */
-async function getTargetTab(tabId) {
-  if (tabId) {
-    return await chrome.tabs.get(tabId);
-  } else {
-    // 未提供tab的时候，使用当前焦点tab
-    const tabs = await chrome.tabs.query({ lastFocusedWindow: true, active: true });
-    if (tabs.length < 1) {
-      throw new Error("Can not find active tab.");
-    }
-    return tabs[0];
-  }
 }
+
+
+
+//#endregion
