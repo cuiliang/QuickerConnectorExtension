@@ -184,14 +184,14 @@ export async function runScriptOnTab(tabId, script, msg) {
 
 
   let world = undefined;
-  let wordId = undefined;
+  let worldId = undefined;
   if (msg.data.world) {
     if (msg.data.world === 'MAIN') {
       world = 'MAIN';
     } else if (msg.data.world === 'USER_SCRIPT') {
       world = 'USER_SCRIPT';
     } else {
-      wordId = msg.data.wordId;
+      worldId = msg.data.world;
     }
   }
 
@@ -251,12 +251,13 @@ function _x(STR_XPATH) {
 
 
   try {
+    
     // https://developer.chrome.com/docs/extensions/reference/api/userScripts#method-execute
     let result = await chrome.userScripts.execute({
       js: scriptSource,
       target: target,
       world: world, // MAIN, USER_SCRIPT.
-      wordId: wordId
+      worldId: worldId
     });
 
 

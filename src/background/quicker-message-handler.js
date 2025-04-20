@@ -23,10 +23,16 @@ import {
 
 import {runBackgroundCommand} from "./background-commands.js";
 import {runTabCommand} from "./tab-commands.js";
+// 从types.js导入ChromeCommandMessage类型
+import './types.js';
+
+/**
+ * @typedef {import('./types').ChromeCommandMessage} ChromeCommandMessage
+ */
 
 /**
  * 处理Quicker命令
- * @param {object} msg 命令消息
+ * @param {ChromeCommandMessage} msg 命令消息
  */
 export function processQuickerCmd(msg) {
   let handler;
@@ -112,7 +118,7 @@ const COMMAND_HANDLERS = {
 
 /**
  * Quicker 连接状态变化了
- * @param {object} msg 消息对象
+ * @param {ChromeCommandMessage} msg 消息对象
  */
 function onMsgQuickerStateChange(msg) {
   if (msg.data.isConnected) {
@@ -151,7 +157,7 @@ function onMsgQuickerStateChange(msg) {
 
 /**
  * 注册右键菜单
- * @param {object} msg 消息对象
+ * @param {ChromeCommandMessage} msg 消息对象
  */
 function onMessageRegisterContextMenu(msg) {
   chrome.contextMenus.removeAll(() => {
@@ -175,7 +181,7 @@ function onMessageRegisterContextMenu(msg) {
 
 /**
  * 处理推送动作消息
- * @param {object} msg 推送动作的消息 
+ * @param {ChromeCommandMessage} msg 推送动作的消息 
  */
 function onMessagePushActions(msg) {
   console.log('onMessagePushActions:', msg.data);
@@ -190,7 +196,7 @@ function onMessagePushActions(msg) {
 
 /**
  *  打开网址
- * @param {object} msg 消息对象
+ * @param {ChromeCommandMessage} msg 消息对象
  */
 function openUrl(msg) {
   const waitLoad = msg.waitComplete;
@@ -240,11 +246,7 @@ function openUrl(msg) {
 
 /**
  * 获得标签信息
- * @param {object} msg 消息对象
- */
-/**
- * 获得标签信息
- * @param {object} msg 消息对象
+ * @param {ChromeCommandMessage} msg 消息对象
  */
 async function getTabInfo(msg) {
   const tabId = msg.tabId;
@@ -261,7 +263,7 @@ async function getTabInfo(msg) {
 
 /**
  * 关闭标签
- * @param {object} msg 消息对象
+ * @param {ChromeCommandMessage} msg 消息对象
  */
 async function closeTab(msg) {
   const tabId = msg.tabId;
@@ -277,7 +279,7 @@ async function closeTab(msg) {
 
 /**
  * 使用Eval.Call执行后台脚本
- * @param {object} msg 消息对象
+ * @param {ChromeCommandMessage} msg 消息对象
  */
 function runBackgroundScript(msg) {
 
@@ -287,7 +289,7 @@ function runBackgroundScript(msg) {
 
 /**
  * 执行脚本
- * @param {object} msg 消息对象
+ * @param {ChromeCommandMessage} msg 消息对象
  */
 async function runScript(msg) {
   const tabId = msg.tabId;
@@ -311,7 +313,7 @@ async function runScript(msg) {
 
 /**
  * 获取某个URL的cookie
- * @param {object} msg 消息对象 data: {url: string}
+ * @param {ChromeCommandMessage} msg 消息对象 data: {url: string}
  */
 function getCookies(msg) {
   chrome.cookies.getAll(msg.data, function (cookies) {
@@ -321,7 +323,7 @@ function getCookies(msg) {
 
 /**
  * 清除某个URL的所有cookie
- * @param {object} msg 消息对象 data:{url: string}
+ * @param {ChromeCommandMessage} msg 消息对象 data:{url: string}
  */
 function removeCookiesByUrl(msg) {
   chrome.cookies.getAll(msg.data, function (cookies) {
@@ -336,7 +338,7 @@ function removeCookiesByUrl(msg) {
 
 /**
  * 截屏整个页面
- * @param {object} msg 消息对象
+ * @param {ChromeCommandMessage} msg 消息对象
  */
 function captureFullPage(msg) {
   // 为保持简洁，仅保留函数接口，具体实现略
