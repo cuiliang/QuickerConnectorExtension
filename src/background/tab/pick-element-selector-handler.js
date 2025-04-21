@@ -51,7 +51,7 @@ export async function pickElementSelectorHandler(target, command, commandParams,
 
     await chrome.scripting.executeScript({
         target: target,
-        files: ['libs/pick.js']
+        files: ['libs/pick.js', 'libs/finder.js']
     });
 
     await chrome.scripting.executeScript({
