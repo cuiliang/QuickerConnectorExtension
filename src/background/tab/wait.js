@@ -80,4 +80,405 @@ const WAIT_PROCESSORS = {
     'elementEvent': waitElementEventHandler,    //content传入事件名 
 }
 
+/**
+ * 通用等待函数
+ * @param {Object} params - 参数对象
+ * @param {Function} conditionFn - 条件检查函数
+ * @returns {Promise<boolean>}
+ */
+function waitForCondition(params, conditionFn) {
+    const timeout = params.timeout || 5000;
+    const pullInterval = params.pullInterval || 200;
+    const startTime = Date.now();
+    
+    return new Promise((resolve) => {
+        function check() {
+            const result = conditionFn();
+            if (result) {
+                resolve(true);
+                return;
+            }
+            
+            if (Date.now() - startTime >= timeout) {
+                resolve(false);
+                return;
+            }
+            
+            setTimeout(check, pullInterval);
+        }
+        
+        check();
+    });
+}
+
+/**
+ * 等待元素存在
+ */
+function waitElementExistsHandler(params) {
+    const selector = params.selector;
+    return waitForCondition(params, () => {
+        return document.querySelector(selector) !== null;
+    });
+}
+
+/**
+ * 等待元素不存在
+ */
+function waitElementNotExistsHandler(params) {
+    const selector = params.selector;
+    return waitForCondition(params, () => {
+        return document.querySelector(selector) === null;
+    });
+}
+
+/**
+ * 等待元素可见
+ */
+function waitElementVisibleHandler(params) {
+    const selector = params.selector;
+    return waitForCondition(params, () => {
+        const element = document.querySelector(selector);
+        if (!element) return false;
+        
+        const style = window.getComputedStyle(element);
+        return element.offsetParent !== null && 
+               style.display !== 'none' && 
+               style.visibility !== 'hidden' &&
+               style.opacity !== '0';
+    });
+}
+
+/**
+ * 等待元素不可见
+ */
+function waitElementNotVisibleHandler(params) {
+    const selector = params.selector;
+    return waitForCondition(params, () => {
+        const element = document.querySelector(selector);
+        if (!element) return true;
+        
+        const style = window.getComputedStyle(element);
+        return element.offsetParent === null || 
+               style.display === 'none' || 
+               style.visibility === 'hidden' ||
+               style.opacity === '0';
+    });
+}
+
+/**
+ * 等待元素可点击
+ */
+function waitElementClickableHandler(params) {
+    const selector = params.selector;
+    return waitForCondition(params, () => {
+        const element = document.querySelector(selector);
+        if (!element) return false;
+        
+        const style = window.getComputedStyle(element);
+        const isVisible = element.offsetParent !== null && 
+                         style.display !== 'none' && 
+                         style.visibility !== 'hidden' &&
+                         style.opacity !== '0';
+        
+        const rect = element.getBoundingClientRect();
+        const isInViewport = rect.top >= 0 &&
+                            rect.left >= 0 &&
+                            rect.bottom <= window.innerHeight &&
+                            rect.right <= window.innerWidth;
+        
+        const isNotDisabled = !element.disabled;
+        
+        return isVisible && isInViewport && isNotDisabled;
+    });
+}
+
+/**
+ * 等待元素不可点击
+ */
+function waitElementNotClickableHandler(params) {
+    const selector = params.selector;
+    return waitForCondition(params, () => {
+        const element = document.querySelector(selector);
+        if (!element) return true;
+        
+        const style = window.getComputedStyle(element);
+        const isVisible = element.offsetParent !== null && 
+                         style.display !== 'none' && 
+                         style.visibility !== 'hidden' &&
+                         style.opacity !== '0';
+        
+        const rect = element.getBoundingClientRect();
+        const isInViewport = rect.top >= 0 &&
+                            rect.left >= 0 &&
+                            rect.bottom <= window.innerHeight &&
+                            rect.right <= window.innerWidth;
+        
+        const isNotDisabled = !element.disabled;
+        
+        return !(isVisible && isInViewport && isNotDisabled);
+    });
+}
+
+/**
+ * 等待文本包含指定内容
+ */
+function waitTextContainsHandler(params) {
+    const selector = params.selector;
+    const content = params.content;
+    
+    return waitForCondition(params, () => {
+        if (!selector || selector === '') {
+            return document.body.textContent.includes(content);
+        } else {
+            const element = document.querySelector(selector);
+            return element && element.textContent.includes(content);
+        }
+    });
+}
+
+/**
+ * 等待文本不包含指定内容
+ */
+function waitTextNotContainsHandler(params) {
+    const selector = params.selector;
+    const content = params.content;
+    
+    return waitForCondition(params, () => {
+        if (!selector || selector === '') {
+            return !document.body.textContent.includes(content);
+        } else {
+            const element = document.querySelector(selector);
+            return !element || !element.textContent.includes(content);
+        }
+    });
+}
+
+/**
+ * 等待文本匹配正则表达式
+ */
+function waitTextMatchesHandler(params) {
+    const selector = params.selector;
+    const pattern = new RegExp(params.content);
+    
+    return waitForCondition(params, () => {
+        if (!selector || selector === '') {
+            return pattern.test(document.body.textContent);
+        } else {
+            const element = document.querySelector(selector);
+            return element && pattern.test(element.textContent);
+        }
+    });
+}
+
+/**
+ * 等待文本不匹配正则表达式
+ */
+function waitTextNotMatchesHandler(params) {
+    const selector = params.selector;
+    const pattern = new RegExp(params.content);
+    
+    return waitForCondition(params, () => {
+        if (!selector || selector === '') {
+            return !pattern.test(document.body.textContent);
+        } else {
+            const element = document.querySelector(selector);
+            return !element || !pattern.test(element.textContent);
+        }
+    });
+}
+
+/**
+ * 等待URL匹配正则表达式
+ */
+function waitUrlMatchesHandler(params) {
+    const pattern = new RegExp(params.content);
+    return waitForCondition(params, () => {
+        return pattern.test(window.location.href);
+    });
+}
+
+/**
+ * 等待URL不匹配正则表达式
+ */
+function waitUrlNotMatchesHandler(params) {
+    const pattern = new RegExp(params.content);
+    return waitForCondition(params, () => {
+        return !pattern.test(window.location.href);
+    });
+}
+
+/**
+ * 等待标题匹配正则表达式
+ */
+function waitTitleMatchesHandler(params) {
+    const pattern = new RegExp(params.content);
+    return waitForCondition(params, () => {
+        return pattern.test(document.title);
+    });
+}
+
+/**
+ * 等待标题不匹配正则表达式
+ */
+function waitTitleNotMatchesHandler(params) {
+    const pattern = new RegExp(params.content);
+    return waitForCondition(params, () => {
+        return !pattern.test(document.title);
+    });
+}
+
+/**
+ * 等待属性匹配正则表达式
+ */
+function waitAttributeMatchesHandler(params) {
+    const selector = params.selector;
+    const [attrName, attrPattern] = params.content.split(':');
+    const pattern = new RegExp(attrPattern.trim());
+    
+    return waitForCondition(params, () => {
+        const element = document.querySelector(selector);
+        if (!element) return false;
+        
+        const attrValue = element.getAttribute(attrName.trim());
+        return attrValue !== null && pattern.test(attrValue);
+    });
+}
+
+/**
+ * 等待属性不匹配正则表达式
+ */
+function waitAttributeNotMatchesHandler(params) {
+    const selector = params.selector;
+    const [attrName, attrPattern] = params.content.split(':');
+    const pattern = new RegExp(attrPattern.trim());
+    
+    return waitForCondition(params, () => {
+        const element = document.querySelector(selector);
+        if (!element) return true;
+        
+        const attrValue = element.getAttribute(attrName.trim());
+        return attrValue === null || !pattern.test(attrValue);
+    });
+}
+
+/**
+ * 等待元素具有指定类名
+ */
+function waitElementHasClassHandler(params) {
+    const selector = params.selector;
+    const className = params.content;
+    
+    return waitForCondition(params, () => {
+        const element = document.querySelector(selector);
+        return element && element.classList.contains(className);
+    });
+}
+
+/**
+ * 等待元素不具有指定类名
+ */
+function waitElementNotHasClassHandler(params) {
+    const selector = params.selector;
+    const className = params.content;
+    
+    return waitForCondition(params, () => {
+        const element = document.querySelector(selector);
+        return !element || !element.classList.contains(className);
+    });
+}
+
+/**
+ * 等待元素具有指定属性
+ */
+function waitElementHasAttributeHandler(params) {
+    const selector = params.selector;
+    const attributeName = params.content;
+    
+    return waitForCondition(params, () => {
+        const element = document.querySelector(selector);
+        return element && element.hasAttribute(attributeName);
+    });
+}
+
+/**
+ * 等待元素不具有指定属性
+ */
+function waitElementNotHasAttributeHandler(params) {
+    const selector = params.selector;
+    const attributeName = params.content;
+    
+    return waitForCondition(params, () => {
+        const element = document.querySelector(selector);
+        return !element || !element.hasAttribute(attributeName);
+    });
+}
+
+/**
+ * 等待元素数量大于指定值
+ */
+function waitElementCountGtHandler(params) {
+    const selector = params.selector;
+    const count = parseInt(params.content, 10);
+    
+    return waitForCondition(params, () => {
+        const elements = document.querySelectorAll(selector);
+        return elements.length > count;
+    });
+}
+
+/**
+ * 等待元素数量小于指定值
+ */
+function waitElementCountLtHandler(params) {
+    const selector = params.selector;
+    const count = parseInt(params.content, 10);
+    
+    return waitForCondition(params, () => {
+        const elements = document.querySelectorAll(selector);
+        return elements.length < count;
+    });
+}
+
+/**
+ * 等待元素数量等于指定值
+ */
+function waitElementCountEqHandler(params) {
+    const selector = params.selector;
+    const count = parseInt(params.content, 10);
+    
+    return waitForCondition(params, () => {
+        const elements = document.querySelectorAll(selector);
+        return elements.length === count;
+    });
+}
+
+/**
+ * 等待元素触发特定事件
+ */
+function waitElementEventHandler(params) {
+    const selector = params.selector;
+    const eventName = params.content;
+    
+    return new Promise((resolve) => {
+        const element = document.querySelector(selector);
+        if (!element) {
+            setTimeout(() => resolve(false), params.timeout || 5000);
+            return;
+        }
+        
+        const timeoutId = setTimeout(() => {
+            element.removeEventListener(eventName, eventHandler);
+            resolve(false);
+        }, params.timeout || 5000);
+        
+        function eventHandler() {
+            clearTimeout(timeoutId);
+            element.removeEventListener(eventName, eventHandler);
+            resolve(true);
+        }
+        
+        element.addEventListener(eventName, eventHandler);
+    });
+}
+
 
