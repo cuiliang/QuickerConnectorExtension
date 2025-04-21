@@ -112,11 +112,58 @@ function waitForCondition(params, conditionFn) {
 }
 
 /**
+ * 使用MutationObserver等待DOM变化
+ * @param {Object} params - 参数对象
+ * @param {Function} conditionFn - 条件检查函数
+ * @returns {Promise<boolean>}
+ */
+function waitForDomChange(params, conditionFn) {
+    const timeout = params.timeout || 5000;
+    const startTime = Date.now();
+    
+    return new Promise((resolve) => {
+        // 先检查当前状态
+        if (conditionFn()) {
+            resolve(true);
+            return;
+        }
+        
+        // 设置超时
+        const timeoutId = setTimeout(() => {
+            if (observer) {
+                observer.disconnect();
+            }
+            resolve(false);
+        }, timeout);
+        
+        // 创建MutationObserver实例
+        const observer = new MutationObserver(() => {
+            if (conditionFn()) {
+                clearTimeout(timeoutId);
+                observer.disconnect();
+                resolve(true);
+            } else if (Date.now() - startTime >= timeout) {
+                observer.disconnect();
+                resolve(false);
+            }
+        });
+        
+        // 开始观察DOM变化
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            characterData: true
+        });
+    });
+}
+
+/**
  * 等待元素存在
  */
 function waitElementExistsHandler(params) {
     const selector = params.selector;
-    return waitForCondition(params, () => {
+    return waitForDomChange(params, () => {
         return document.querySelector(selector) !== null;
     });
 }
@@ -126,7 +173,7 @@ function waitElementExistsHandler(params) {
  */
 function waitElementNotExistsHandler(params) {
     const selector = params.selector;
-    return waitForCondition(params, () => {
+    return waitForDomChange(params, () => {
         return document.querySelector(selector) === null;
     });
 }
@@ -136,15 +183,28 @@ function waitElementNotExistsHandler(params) {
  */
 function waitElementVisibleHandler(params) {
     const selector = params.selector;
-    return waitForCondition(params, () => {
-        const element = document.querySelector(selector);
-        if (!element) return false;
+    
+    return new Promise(async (resolve) => {
+        // 先等待元素存在
+        const elementExists = await waitElementExistsHandler(params);
+        if (!elementExists) {
+            resolve(false);
+            return;
+        }
         
-        const style = window.getComputedStyle(element);
-        return element.offsetParent !== null && 
-               style.display !== 'none' && 
-               style.visibility !== 'hidden' &&
-               style.opacity !== '0';
+        // 然后判断可见性
+        const result = await waitForCondition(params, () => {
+            const element = document.querySelector(selector);
+            if (!element) return false;
+            
+            const style = window.getComputedStyle(element);
+            return element.offsetParent !== null && 
+                   style.display !== 'none' && 
+                   style.visibility !== 'hidden' &&
+                   style.opacity !== '0';
+        });
+        
+        resolve(result);
     });
 }
 
@@ -153,6 +213,7 @@ function waitElementVisibleHandler(params) {
  */
 function waitElementNotVisibleHandler(params) {
     const selector = params.selector;
+    
     return waitForCondition(params, () => {
         const element = document.querySelector(selector);
         if (!element) return true;
@@ -170,25 +231,38 @@ function waitElementNotVisibleHandler(params) {
  */
 function waitElementClickableHandler(params) {
     const selector = params.selector;
-    return waitForCondition(params, () => {
-        const element = document.querySelector(selector);
-        if (!element) return false;
+    
+    return new Promise(async (resolve) => {
+        // 先等待元素存在
+        const elementExists = await waitElementExistsHandler(params);
+        if (!elementExists) {
+            resolve(false);
+            return;
+        }
         
-        const style = window.getComputedStyle(element);
-        const isVisible = element.offsetParent !== null && 
-                         style.display !== 'none' && 
-                         style.visibility !== 'hidden' &&
-                         style.opacity !== '0';
+        // 然后判断可点击性
+        const result = await waitForCondition(params, () => {
+            const element = document.querySelector(selector);
+            if (!element) return false;
+            
+            const style = window.getComputedStyle(element);
+            const isVisible = element.offsetParent !== null && 
+                             style.display !== 'none' && 
+                             style.visibility !== 'hidden' &&
+                             style.opacity !== '0';
+            
+            const rect = element.getBoundingClientRect();
+            const isInViewport = rect.top >= 0 &&
+                                rect.left >= 0 &&
+                                rect.bottom <= window.innerHeight &&
+                                rect.right <= window.innerWidth;
+            
+            const isNotDisabled = !element.disabled;
+            
+            return isVisible && isInViewport && isNotDisabled;
+        });
         
-        const rect = element.getBoundingClientRect();
-        const isInViewport = rect.top >= 0 &&
-                            rect.left >= 0 &&
-                            rect.bottom <= window.innerHeight &&
-                            rect.right <= window.innerWidth;
-        
-        const isNotDisabled = !element.disabled;
-        
-        return isVisible && isInViewport && isNotDisabled;
+        resolve(result);
     });
 }
 
@@ -226,14 +300,28 @@ function waitTextContainsHandler(params) {
     const selector = params.selector;
     const content = params.content;
     
-    return waitForCondition(params, () => {
-        if (!selector || selector === '') {
+    if (!selector || selector === '') {
+        return waitForCondition(params, () => {
             return document.body.textContent.includes(content);
-        } else {
-            const element = document.querySelector(selector);
-            return element && element.textContent.includes(content);
-        }
-    });
+        });
+    } else {
+        return new Promise(async (resolve) => {
+            // 先等待元素存在
+            const elementExists = await waitElementExistsHandler({...params, timeout: params.timeout / 2});
+            if (!elementExists) {
+                resolve(false);
+                return;
+            }
+            
+            // 然后判断文本
+            const result = await waitForCondition(params, () => {
+                const element = document.querySelector(selector);
+                return element && element.textContent.includes(content);
+            });
+            
+            resolve(result);
+        });
+    }
 }
 
 /**
@@ -243,14 +331,16 @@ function waitTextNotContainsHandler(params) {
     const selector = params.selector;
     const content = params.content;
     
-    return waitForCondition(params, () => {
-        if (!selector || selector === '') {
+    if (!selector || selector === '') {
+        return waitForCondition(params, () => {
             return !document.body.textContent.includes(content);
-        } else {
+        });
+    } else {
+        return waitForCondition(params, () => {
             const element = document.querySelector(selector);
             return !element || !element.textContent.includes(content);
-        }
-    });
+        });
+    }
 }
 
 /**
@@ -260,14 +350,28 @@ function waitTextMatchesHandler(params) {
     const selector = params.selector;
     const pattern = new RegExp(params.content);
     
-    return waitForCondition(params, () => {
-        if (!selector || selector === '') {
+    if (!selector || selector === '') {
+        return waitForCondition(params, () => {
             return pattern.test(document.body.textContent);
-        } else {
-            const element = document.querySelector(selector);
-            return element && pattern.test(element.textContent);
-        }
-    });
+        });
+    } else {
+        return new Promise(async (resolve) => {
+            // 先等待元素存在
+            const elementExists = await waitElementExistsHandler({...params, timeout: params.timeout / 2});
+            if (!elementExists) {
+                resolve(false);
+                return;
+            }
+            
+            // 然后判断文本
+            const result = await waitForCondition(params, () => {
+                const element = document.querySelector(selector);
+                return element && pattern.test(element.textContent);
+            });
+            
+            resolve(result);
+        });
+    }
 }
 
 /**
@@ -277,14 +381,16 @@ function waitTextNotMatchesHandler(params) {
     const selector = params.selector;
     const pattern = new RegExp(params.content);
     
-    return waitForCondition(params, () => {
-        if (!selector || selector === '') {
+    if (!selector || selector === '') {
+        return waitForCondition(params, () => {
             return !pattern.test(document.body.textContent);
-        } else {
+        });
+    } else {
+        return waitForCondition(params, () => {
             const element = document.querySelector(selector);
             return !element || !pattern.test(element.textContent);
-        }
-    });
+        });
+    }
 }
 
 /**
@@ -335,12 +441,24 @@ function waitAttributeMatchesHandler(params) {
     const [attrName, attrPattern] = params.content.split(':');
     const pattern = new RegExp(attrPattern.trim());
     
-    return waitForCondition(params, () => {
-        const element = document.querySelector(selector);
-        if (!element) return false;
+    return new Promise(async (resolve) => {
+        // 先等待元素存在
+        const elementExists = await waitElementExistsHandler({...params, timeout: params.timeout / 2});
+        if (!elementExists) {
+            resolve(false);
+            return;
+        }
         
-        const attrValue = element.getAttribute(attrName.trim());
-        return attrValue !== null && pattern.test(attrValue);
+        // 然后判断属性
+        const result = await waitForCondition(params, () => {
+            const element = document.querySelector(selector);
+            if (!element) return false;
+            
+            const attrValue = element.getAttribute(attrName.trim());
+            return attrValue !== null && pattern.test(attrValue);
+        });
+        
+        resolve(result);
     });
 }
 
@@ -368,9 +486,21 @@ function waitElementHasClassHandler(params) {
     const selector = params.selector;
     const className = params.content;
     
-    return waitForCondition(params, () => {
-        const element = document.querySelector(selector);
-        return element && element.classList.contains(className);
+    return new Promise(async (resolve) => {
+        // 先等待元素存在
+        const elementExists = await waitElementExistsHandler({...params, timeout: params.timeout / 2});
+        if (!elementExists) {
+            resolve(false);
+            return;
+        }
+        
+        // 然后判断类名
+        const result = await waitForCondition(params, () => {
+            const element = document.querySelector(selector);
+            return element && element.classList.contains(className);
+        });
+        
+        resolve(result);
     });
 }
 
@@ -394,9 +524,21 @@ function waitElementHasAttributeHandler(params) {
     const selector = params.selector;
     const attributeName = params.content;
     
-    return waitForCondition(params, () => {
-        const element = document.querySelector(selector);
-        return element && element.hasAttribute(attributeName);
+    return new Promise(async (resolve) => {
+        // 先等待元素存在
+        const elementExists = await waitElementExistsHandler({...params, timeout: params.timeout / 2});
+        if (!elementExists) {
+            resolve(false);
+            return;
+        }
+        
+        // 然后判断属性
+        const result = await waitForCondition(params, () => {
+            const element = document.querySelector(selector);
+            return element && element.hasAttribute(attributeName);
+        });
+        
+        resolve(result);
     });
 }
 
@@ -420,7 +562,7 @@ function waitElementCountGtHandler(params) {
     const selector = params.selector;
     const count = parseInt(params.content, 10);
     
-    return waitForCondition(params, () => {
+    return waitForDomChange(params, () => {
         const elements = document.querySelectorAll(selector);
         return elements.length > count;
     });
@@ -433,7 +575,7 @@ function waitElementCountLtHandler(params) {
     const selector = params.selector;
     const count = parseInt(params.content, 10);
     
-    return waitForCondition(params, () => {
+    return waitForDomChange(params, () => {
         const elements = document.querySelectorAll(selector);
         return elements.length < count;
     });
@@ -446,7 +588,7 @@ function waitElementCountEqHandler(params) {
     const selector = params.selector;
     const count = parseInt(params.content, 10);
     
-    return waitForCondition(params, () => {
+    return waitForDomChange(params, () => {
         const elements = document.querySelectorAll(selector);
         return elements.length === count;
     });
@@ -459,17 +601,19 @@ function waitElementEventHandler(params) {
     const selector = params.selector;
     const eventName = params.content;
     
-    return new Promise((resolve) => {
-        const element = document.querySelector(selector);
-        if (!element) {
-            setTimeout(() => resolve(false), params.timeout || 5000);
+    return new Promise(async (resolve) => {
+        // 先等待元素存在
+        const elementExists = await waitElementExistsHandler({...params, timeout: params.timeout / 2});
+        if (!elementExists) {
+            resolve(false);
             return;
         }
         
+        const element = document.querySelector(selector);
         const timeoutId = setTimeout(() => {
             element.removeEventListener(eventName, eventHandler);
             resolve(false);
-        }, params.timeout || 5000);
+        }, params.timeout / 2);
         
         function eventHandler() {
             clearTimeout(timeoutId);
