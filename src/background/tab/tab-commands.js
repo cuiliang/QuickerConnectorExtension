@@ -1,10 +1,12 @@
 'use strict';
 
-import {getTargetTab} from '../utils.js';
-import {sendReplyToQuicker} from '../connection.js';
-import {pickElementSelectorHandler} from "./pick-element-selector-handler.js";
-import {triggerEventHandler} from "./trigger-event-handler.js";
-import {updateElementInfoHandler} from "./update-element-info.js";
+import { getTargetTab } from '../utils.js';
+import { sendReplyToQuicker } from '../connection.js';
+import { pickElementSelectorHandler } from "./pick-element-selector-handler.js";
+import { triggerEventHandler } from "./trigger-event-handler.js";
+import { updateElementInfoHandler } from "./update-element-info.js";
+import { getElementInfoHandler } from "./get-element-info.js";
+
 /**
  * 对标签页执行命令.
  * 这些脚本运行在ContentPage上下文中
@@ -47,7 +49,13 @@ export async function runTabCommand(msg) {
   //
   // execute
   try {
-    await handler(target, command, params, msg);
+    // handler应该返回PC端最终需要的结果
+    var result = await handler(target, command, params, msg);
+
+    console.log('runTabCommand result:', result);
+    
+    sendReplyToQuicker(true, 'ok', result, msg.serial);
+
   }
   catch (e) {
     console.error('Error executing tab command:', msg, e);
@@ -61,6 +69,7 @@ export async function runTabCommand(msg) {
  */
 const TAB_COMMAND_HANDLERS = {
   'pick_element_selector': pickElementSelectorHandler,
+  'get_element_info': getElementInfoHandler,
   'trigger_event': triggerEventHandler,
   'update_element_info': updateElementInfoHandler,
 }
