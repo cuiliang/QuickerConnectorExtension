@@ -22,7 +22,7 @@
         "<all_urls>"
       ],
       "js": [
-        "./libs/jquery-3.6.0.min.js",
+        "./libs/jquery.min.js",
         "./content/content.js"
       ],
       "css":[

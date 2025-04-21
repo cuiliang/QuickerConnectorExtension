@@ -19,7 +19,7 @@ export async function updateElementInfoHandler(target, command, commandParams, m
 
     await chrome.scripting.executeScript({
         target: target,
-        files: ['libs/jquery-3.6.0.min.js']
+        files: ['libs/jquery.min.js']
     });
 
     try {

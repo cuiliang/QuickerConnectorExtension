@@ -219,7 +219,7 @@ export async function runScriptOnTab(tabId, script, msg) {
   // 检查脚本是否包含jQuery代码
   if (code.includes('$') || code.includes('jQuery')) {
     scriptSource.push({
-      file: './libs/jquery-3.6.0.min.js'
+      file: './libs/jquery.min.js'
     });
   }
 

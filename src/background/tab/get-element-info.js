@@ -19,7 +19,7 @@ export async function getElementInfoHandler(target, command, commandParams, msg)
 
     await chrome.scripting.executeScript({
         target: target,
-        files: ['libs/jquery-3.6.0.min.js']
+        files: ['libs/jquery.min.js']
     });
 
     var result = await chrome.scripting.executeScript({
