@@ -1,5 +1,7 @@
 'use strict';
 
+import {sendReplyToQuicker} from '../connection.js';
+
 /**
  * 更新元素信息
  * @param {Object} target - 目标对象
@@ -20,13 +22,20 @@ export async function updateElementInfoHandler(target, command, commandParams, m
         files: ['libs/jquery-3.6.0.min.js']
     });
 
-    var result = await chrome.scripting.executeScript({
-        target: target,
-        func: updateFormControl,
-        args: [selector, value, infoType, attrName]
-    });
+    try {
+        var result = await chrome.scripting.executeScript({
+            target: target,
+            func: updateFormControl,
+            args: [selector, value, infoType, attrName]
+        });
 
-    console.log('updateElementInfo result:', result);
+        console.log('updateElementInfo result:', result);
+
+        sendReplyToQuicker(true, 'ok', {}, msg.serial);
+    } catch (error) {
+        console.error('updateElementInfo error:', error);
+        sendReplyToQuicker(false, error.message, {}, msg.serial);
+    }
 }
 
 
@@ -52,13 +61,10 @@ function updateFormControl(selector, targetValue, updateType, attributeName) {
         throw new Error(`错误：targetValue 必须是一个字符串，但收到了类型 ${typeof targetValue}。`);
     }
 
-    var element = getElementBySelector(selector);
-    if (!element) {
-        throw new Error(`错误：选择器 "${selector}" 没有找到任何元素。`);
-    }
+
 
     // 使用 JQuery 选择器查找元素
-    const $elements = $(selector);
+    const $elements = selector.startsWith('xpath:') ? $(_x(selector.substring(7))) : $(selector);
 
     // 检查是否找到元素
     if ($elements.length === 0) {
@@ -81,7 +87,7 @@ function updateFormControl(selector, targetValue, updateType, attributeName) {
                 $elements.val(targetValue);
 
                 //触发输入和改变事件
-                var event = new Event('input', {bubbles: true});
+                var event = new Event('input', { bubbles: true });
                 var tracker = element._valueTracker;
                 if (tracker) {
                     tracker.setValue(lastValue);
