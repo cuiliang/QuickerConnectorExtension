@@ -6,6 +6,7 @@ import { pickElementSelectorHandler } from "./pick-element-selector-handler.js";
 import { triggerEventHandler } from "./trigger-event-handler.js";
 import { updateElementInfoHandler } from "./update-element-info.js";
 import { getElementInfoHandler } from "./get-element-info.js";
+import { waitHandler } from "./wait.js";
 
 /**
  * 对标签页执行命令.
@@ -79,6 +80,7 @@ const TAB_COMMAND_HANDLERS = {
   'get_element_info': getElementInfoHandler,
   'trigger_event': triggerEventHandler,
   'update_element_info': updateElementInfoHandler,
+  'wait': waitHandler,
 }
 
 
