@@ -451,42 +451,42 @@ async function executeScroll(scrollFunc) {
  * 向上滚动 (一页)
  */
 async function scrollUp() {
-    await executeScroll(() => window.scrollBy(0, -window.innerHeight * 0.8));
+    await executeScroll(() => window.scrollBy({ top: -window.innerHeight * 0.8, left: 0, behavior: 'smooth' }));
 }
 
 /**
  * 向下滚动 (一页)
  */
 async function scrollDown() {
-    await executeScroll(() => window.scrollBy(0, window.innerHeight * 0.8));
+    await executeScroll(() => window.scrollBy({ top: window.innerHeight * 0.8, left: 0, behavior: 'smooth' }));
 }
 
 /**
  * 到顶部
  */
 async function scrollToTop() {
-    await executeScroll(() => window.scrollTo(0, 0));
+    await executeScroll(() => window.scrollTo({ top: 0, left: 0, behavior: 'smooth' }));
 }
 
 /**
  * 到底部
  */
 async function scrollToBottom() {
-    await executeScroll(() => window.scrollTo(0, document.body.scrollHeight));
+    await executeScroll(() => window.scrollTo({ top: document.body.scrollHeight, left: 0, behavior: 'smooth' }));
 }
 
 /**
  * 向左滚动 (一页)
  */
 async function scrollLeft() {
-    await executeScroll(() => window.scrollBy(-window.innerWidth * 0.8, 0));
+    await executeScroll(() => window.scrollBy({ top: 0, left: -window.innerWidth * 0.8, behavior: 'smooth' }));
 }
 
 /**
  * 向右滚动 (一页)
  */
 async function scrollRight() {
-    await executeScroll(() => window.scrollBy(window.innerWidth * 0.8, 0));
+    await executeScroll(() => window.scrollBy({ top: 0, left: window.innerWidth * 0.8, behavior: 'smooth' }));
 }
 
 

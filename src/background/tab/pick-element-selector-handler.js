@@ -24,7 +24,7 @@ function funcPickElementMain(msgSerial) {
             trigger: 'click',
             callback: (function (target) {
                 console.log('element selected:', target);
-                const selector = finder(target);
+                const selector = CssFinder.finder(target);
                 console.log('get selector:', selector);
 
 
