@@ -29,12 +29,17 @@ export async function updateElementInfoHandler(target, command, commandParams, m
             args: [selector, value, infoType, attrName]
         });
 
-        console.log('updateElementInfo result:', result);
+        console.log('updateElementInfo result:', result);   
 
-        sendReplyToQuicker(true, 'ok', {}, msg.serial);
+        let hasUpdateSuccess = result.filter(x => x.result).length > 0;
+
+        if (hasUpdateSuccess) {
+            return {success: true, result: {}};
+        } else {
+            return {success: false, error: `没有找到元素(${selector})或遇到了错误，请检查浏览器控制台报错。`};
+        }
     } catch (error) {
-        console.error('updateElementInfo error:', error);
-        sendReplyToQuicker(false, error.message, {}, msg.serial);
+        return {success: false, error: error.message};
     }
 }
 
@@ -70,6 +75,8 @@ function updateFormControl(selector, targetValue, updateType, attributeName) {
     if ($elements.length === 0) {
         throw new Error(`错误：选择器 "${selector}" 没有找到任何元素。`);
     }
+
+    const element = $elements[0];
 
     // 定义可能需要特殊处理的属性名 (小写)
     const booleanPropertyNames = ['checked', 'disabled', 'required', 'readonly', 'multiple', 'selected', 'hidden'];
@@ -207,6 +214,7 @@ function updateFormControl(selector, targetValue, updateType, attributeName) {
 
         $elements.trigger('change');
 
+        return true;
     } catch (error) {
         throw new Error(`更新元素 "${selector}" 时发生错误: ${error.message}`);
     }

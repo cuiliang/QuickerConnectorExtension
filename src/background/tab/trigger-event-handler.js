@@ -23,28 +23,20 @@ export async function triggerEventHandler(target, command, commandParams, msg) {
     
         console.log('trigger event result:', reuslt);
     
-        sendReplyToQuicker(true, 'ok', {}, msg.serial);
+        // 如果有找到元素的，则认为触发成功
+        let hasTriggerSuccess = reuslt.filter(x => x.result).length > 0;
+
+        if (hasTriggerSuccess) {
+            return {success: true, result: {}};
+        } else {
+            return {success: false, error: `没有找到元素(${selector})或遇到了错误，请检查浏览器控制台报错。`};
+        }
     }catch(error){
-        console.error('trigger event error:', error);
-        sendReplyToQuicker(false, error.message, {}, msg.serial);
+       return {success: false, error: error.message};
     }
 }
 
-/**
- * 在指定元素上触发事件。
- * 此函数设计用于浏览器扩展的内容脚本 (content script)。
- *
- * @param {string} selector - 元素的 CSS 选择器，或者以 "xpath:" 开头的 XPath 表达式。
- * @param {string} eventType - 要触发的事件类型:
- * 'click': 模拟鼠标点击 (使用 element.click())。
- * 'change': 触发 change 事件 (通常用于 input, select, textarea)。
- * 'native.eventName': 触发指定的原生 JS 事件 (如 'native.focus', 'native.mouseover')。
- * 'otherEventName': 触发其他可以通过 dispatchEvent 触发的标准或自定义事件 (如 'input', 'blur', 'custom-event')。
- * @param {object} [eventProperties={}] - (可选) 附加到事件对象的额外属性。
- * 当使用 dispatchEvent 时生效，可以包含如 bubbles, cancelable, detail 等。
- * @returns {boolean} - 如果成功找到元素并尝试触发事件，则返回 true；如果未找到元素或选择器无效，则返回 false。
- * 注意：返回 true 并不保证页面上的事件监听器一定会按预期执行，仅表示事件已触发。
- */
+
 /**
  * 在指定元素上触发事件。
  * 此函数设计用于浏览器扩展的内容脚本 (content script)。

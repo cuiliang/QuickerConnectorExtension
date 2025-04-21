@@ -29,20 +29,16 @@ export async function getElementInfoHandler(target, command, commandParams, msg)
     });
     console.log('getElementInfo result:', result);
 
-    // 合并所有frame的结果
-    // const valueArray = result.reduce((acc, curr) => {
-    //     if (curr.result) {
-    //         acc = acc.concat(curr.result);
-    //     }
-    //     return acc;
-    // }, []);
-    const valueArray = result.map(x => x.result);
+    // 从 result 数组中查找第一个具有有效 result 属性的项，并返回该 result 值
+    const valueArray = result.filter(x => x.result).map(x => x.result);
 
     console.log('getElementInfo valueArray:', valueArray);
-   
-    
 
-    return valueArray;
+    if (valueArray.length === 0) {
+        return {success: false, error: `没有找到元素(${selector})`};
+    }else{
+        return {success: true, result: valueArray};
+    }
 }
 
 

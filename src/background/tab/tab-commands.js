@@ -49,13 +49,20 @@ export async function runTabCommand(msg) {
   //
   // execute
   try {
-    // handler应该返回PC端最终需要的结果
+    // handler应该返回{success, result, error}, 其中result是PC端最终需要的结果
     var result = await handler(target, command, params, msg);
 
     console.log('runTabCommand result:', result);
     
-    sendReplyToQuicker(true, 'ok', result, msg.serial);
-
+    if (result === undefined) {
+      // 如果返回undefined，则认为是在handler中已经处理了回复
+    } else {
+      if (result.success) {
+        sendReplyToQuicker(true, 'ok', result.result, msg.serial);
+      } else {
+        sendReplyToQuicker(false, result.error, null, msg.serial);
+      }
+    }
   }
   catch (e) {
     console.error('Error executing tab command:', msg, e);
@@ -68,7 +75,7 @@ export async function runTabCommand(msg) {
  * 后台命令和处理函数的映射 
  */
 const TAB_COMMAND_HANDLERS = {
-  'pick_element_selector': pickElementSelectorHandler,
+  'pick_element_selector': pickElementSelectorHandler,  // 选择元素，并向Quicker返回选择器。返回undefined
   'get_element_info': getElementInfoHandler,
   'trigger_event': triggerEventHandler,
   'update_element_info': updateElementInfoHandler,
