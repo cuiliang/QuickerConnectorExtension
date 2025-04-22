@@ -1,4 +1,7 @@
 "use strict";
+
+/// <reference types="chrome" />
+
 /**
  * 本插件用于连接Quicker软件。
  * 网址：https://getquicker.net
