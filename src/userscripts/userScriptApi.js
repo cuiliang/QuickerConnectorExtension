@@ -1,10 +1,14 @@
 // src/userScripts/userScriptApi.js
 // API for User Scripts to interact with the Quicker Connector extension.
 
+
+
 // Basic logging (consider a more robust solution if needed)
 function _log(...args) {
     console.log('[UserScriptAPI]', ...args); // Enable for debugging
 }
+
+_log('UserScriptAPI loaded');
 
 /**
  * 向Quicker发送通用消息，由service worker中转

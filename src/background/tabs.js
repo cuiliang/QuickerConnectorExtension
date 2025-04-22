@@ -210,16 +210,16 @@ export async function runScriptOnTab(tabId, script, msg) {
 
   const scriptSource = [];
   // 检查脚本是否包含'quicker'关键字
-  if (code.includes('quicker')) {
+  if (code.includes('sendReplyToQuicker')) {
     scriptSource.push({
-      file: './userScripts/userScriptApi.js'
+      file: 'userScripts/userScriptApi.js'
     });
   }
 
   // 检查脚本是否包含jQuery代码
   if (code.includes('$') || code.includes('jQuery')) {
     scriptSource.push({
-      file: './libs/jquery.min.js'
+      file: 'libs/jquery.min.js'
     });
   }
 
